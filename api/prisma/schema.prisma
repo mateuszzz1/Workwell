@@ -1,20 +1,272 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Get a free hosted Postgres database in seconds: `npx create-db`
-
 generator client {
   provider = "prisma-client"
-  output   = "../generated/prisma"
+  output   = "../src/generated/prisma"
 }
 
 datasource db {
   provider = "postgresql"
 }
 
+enum PerfilUsuario {
+  COLABORADOR
+  GESTOR_RH
+}
+
+enum CategoriaHabito {
+  SONO
+  ATIVIDADE_FISICA
+  ALIMENTACAO
+  PAUSA
+  ESTRESSE
+}
+
+enum PeriodoMeta {
+  DIARIA
+  SEMANAL
+}
+
+enum TipoLembrete {
+  PAUSA
+  DESCANSO
+  CHECKIN
+  META
+}
+
+enum StatusDesafio {
+  ATIVO
+  ENCERRADO
+}
+
+enum FormatoRelatorio {
+  PDF
+  CSV
+}
+
+model Empresa {
+  id           Int      @id @default(autoincrement())
+  nome         String
+  cnpj         String?  @unique
+  porte        String?
+  ativa        Boolean  @default(true)
+  criadaEm     DateTime @default(now())
+  atualizadaEm DateTime @updatedAt
+
+  usuarios   Usuario[]
+  desafios   Desafio[]
+  alertas    AlertaEngajamento[]
+  relatorios Relatorio[]
+
+  @@index([nome])
+}
+
+/// Colaborador e gestor de RH compartilham uma tabela. O campo perfil
+/// determina as permissões; campos específicos de cada perfil são opcionais.
 model Usuario {
-  id        Int      @id @default(autoincrement())
+  id                  Int           @id @default(autoincrement())
+  empresaId           Int
+  nome                String
+  email               String        @unique
+  senhaHash           String?
+  perfil              PerfilUsuario @default(COLABORADOR)
+  cargo               String?
+  setor               String?
+  areaResponsavel     String?
+  pontosTotal         Int           @default(0)
+  onboardingConcluido Boolean       @default(false)
+  prefNotificacao     Boolean       @default(true)
+  ativo               Boolean       @default(true)
+  criadoEm            DateTime      @default(now())
+  atualizadoEm        DateTime      @updatedAt
+
+  empresa           Empresa               @relation(fields: [empresaId], references: [id], onDelete: Restrict)
+  checkins          Checkin[]
+  metas             Meta[]
+  lembretes         Lembrete[]
+  participacoes     ParticipacaoDesafio[]
+  medalhas          ConquistaMedalha[]
+  desafiosCriados   Desafio[]             @relation("DesafioCriador")
+  alertasRecebidos  AlertaEngajamento[]   @relation("AlertaGestor")
+  relatoriosGerados Relatorio[]
+
+  @@index([empresaId, perfil])
+  @@index([empresaId, setor])
+}
+
+model Checkin {
+  id           Int      @id @default(autoincrement())
+  usuarioId    Int
+  data         DateTime @db.Date
+  humor        Int
+  energia      Int
+  sono         Int?
+  estresse     Int?
+  observacao   String?
+  criadoEm     DateTime @default(now())
+  atualizadoEm DateTime @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@unique([usuarioId, data])
+  @@index([data])
+}
+
+model Habito {
+  id        Int             @id @default(autoincrement())
   nome      String
-  email     String   @unique
+  descricao String?
+  categoria CategoriaHabito
+  ativo     Boolean         @default(true)
+  criadoEm  DateTime        @default(now())
+
+  metas Meta[]
+
+  @@unique([nome, categoria])
+}
+
+model Meta {
+  id             Int         @id @default(autoincrement())
+  usuarioId      Int
+  habitoId       Int
+  frequenciaAlvo Int
+  periodo        PeriodoMeta
+  dataInicio     DateTime    @db.Date
+  dataFim        DateTime?   @db.Date
+  ativa          Boolean     @default(true)
+  criadaEm       DateTime    @default(now())
+  atualizadaEm   DateTime    @updatedAt
+
+  usuario   Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  habito    Habito           @relation(fields: [habitoId], references: [id], onDelete: Restrict)
+  registros RegistroHabito[]
+
+  @@index([usuarioId, ativa])
+  @@index([habitoId])
+}
+
+model RegistroHabito {
+  id        Int      @id @default(autoincrement())
+  metaId    Int
+  data      DateTime @db.Date
+  concluido Boolean  @default(true)
   criadoEm  DateTime @default(now())
+
+  meta Meta @relation(fields: [metaId], references: [id], onDelete: Cascade)
+
+  @@unique([metaId, data])
+  @@index([data])
+}
+
+model Lembrete {
+  id           Int          @id @default(autoincrement())
+  usuarioId    Int
+  tipo         TipoLembrete
+  horario      DateTime     @db.Time(0)
+  diasSemana   Int[]        @default([])
+  ativo        Boolean      @default(true)
+  criadoEm     DateTime     @default(now())
+  atualizadoEm DateTime     @updatedAt
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+
+  @@index([usuarioId, ativo])
+}
+
+model Desafio {
+  id               Int           @id @default(autoincrement())
+  empresaId        Int
+  criadoPorId      Int?
+  titulo           String
+  descricao        String?
+  dataInicio       DateTime      @db.Date
+  dataFim          DateTime      @db.Date
+  pontosRecompensa Int           @default(0)
+  status           StatusDesafio @default(ATIVO)
+  criadoEm         DateTime      @default(now())
+  atualizadoEm     DateTime      @updatedAt
+
+  empresa       Empresa               @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  criadoPor     Usuario?              @relation("DesafioCriador", fields: [criadoPorId], references: [id], onDelete: SetNull)
+  participacoes ParticipacaoDesafio[]
+
+  @@index([empresaId, status])
+  @@index([criadoPorId])
+}
+
+model ParticipacaoDesafio {
+  usuarioId     Int
+  desafioId     Int
+  dataAdesao    DateTime  @default(now())
+  progresso     Int       @default(0)
+  concluido     Boolean   @default(false)
+  dataConclusao DateTime?
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  desafio Desafio @relation(fields: [desafioId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, desafioId])
+  @@index([desafioId, concluido])
+}
+
+model Medalha {
+  id        Int      @id @default(autoincrement())
+  nome      String   @unique
+  descricao String?
+  icone     String?
+  criterio  String
+  criadaEm  DateTime @default(now())
+
+  conquistas ConquistaMedalha[]
+}
+
+model ConquistaMedalha {
+  usuarioId     Int
+  medalhaId     Int
+  dataConquista DateTime @default(now())
+
+  usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  medalha Medalha @relation(fields: [medalhaId], references: [id], onDelete: Cascade)
+
+  @@id([usuarioId, medalhaId])
+  @@index([medalhaId])
+}
+
+/// Alerta gerencial agregado. Não existe referência a um colaborador
+/// específico, evitando revelar ao RH quem deixou de realizar check-ins.
+model AlertaEngajamento {
+  id                      Int       @id @default(autoincrement())
+  empresaId               Int
+  gestorDestinatarioId    Int?
+  setor                   String?
+  periodoInicio           DateTime  @db.Date
+  periodoFim              DateTime  @db.Date
+  quantidadeColaboradores Int
+  taxaEngajamento         Decimal   @db.Decimal(5, 2)
+  limiarMinimoGrupo       Int       @default(5)
+  visualizado             Boolean   @default(false)
+  geradoEm                DateTime  @default(now())
+  visualizadoEm           DateTime?
+
+  empresa            Empresa  @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  gestorDestinatario Usuario? @relation("AlertaGestor", fields: [gestorDestinatarioId], references: [id], onDelete: SetNull)
+
+  @@index([empresaId, periodoInicio, periodoFim])
+  @@index([gestorDestinatarioId, visualizado])
+}
+
+model Relatorio {
+  id             Int              @id @default(autoincrement())
+  empresaId      Int
+  gestorId       Int
+  periodoInicio  DateTime         @db.Date
+  periodoFim     DateTime         @db.Date
+  setorFiltro    String?
+  formato        FormatoRelatorio
+  caminhoArquivo String?
+  geradoEm       DateTime         @default(now())
+
+  empresa Empresa @relation(fields: [empresaId], references: [id], onDelete: Cascade)
+  gestor  Usuario @relation(fields: [gestorId], references: [id], onDelete: Restrict)
+
+  @@index([empresaId, geradoEm])
+  @@index([gestorId])
 }

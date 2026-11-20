@@ -133,13 +133,13 @@ describe("UC01/UC02 cadastro e login + banco", () => {
   });
 
   test("login: mensagens genéricas e token adulterado", async () => {
-    const errada = await chamar("/auth/login", { metodo: "POST", corpo: { email: "ana.souza@workwell.local", senha: "errada123" } });
+    const errada = await chamar("/auth/login", { metodo: "POST", corpo: { email: "user@ifsp.com", senha: "errada123" } });
     const inexistente = await chamar("/auth/login", { metodo: "POST", corpo: { email: "ninguem@workwell.local", senha: "errada123" } });
     assert.equal(errada.status, 401);
     assert.equal(inexistente.status, 401);
     assert.equal(errada.corpo.erro, inexistente.corpo.erro); // não revela se o e-mail existe
 
-    const token = await login("ana.souza@workwell.local");
+    const token = await login("user@ifsp.com");
     const [dados, assinatura] = token.split(".");
     const falsificado = Buffer.from(Buffer.from(dados!, "base64url").toString().replace("COLABORADOR", "GESTOR_RH")).toString("base64url");
     assert.equal((await chamar("/dashboard", { token: `${falsificado}.${assinatura}` })).status, 401);
@@ -210,7 +210,7 @@ describe("UC03 onboarding e UC01 perfil + banco", () => {
     const noBanco = await prisma.usuario.findUniqueOrThrow({ where: { id } });
     assert.deepEqual([noBanco.nome, noBanco.cargo, noBanco.setor, noBanco.prefNotificacao], ["Perfil Editado", "Analista Sr", "Financeiro", false]);
 
-    const rh = await login("rh.demo@workwell.local");
+    const rh = await login("rh@ifsp.com");
     assert.equal((await chamar("/usuarios/me", { token: rh })).status, 200);
     assert.equal((await chamar("/usuarios/me/onboarding", { metodo: "POST", token: rh, corpo: {} })).status, 403);
     assert.equal((await chamar("/usuarios/me", { metodo: "PUT", token: rh, corpo: {} })).status, 403);
@@ -228,7 +228,7 @@ describe("UC04/UC07 check-in + UC10 pontos e medalhas + banco", () => {
     }
 
     // Tentativa de gravar para outra pessoa: o usuarioId do corpo é ignorado.
-    const ana = await prisma.usuario.findUniqueOrThrow({ where: { email: "ana.souza@workwell.local" } });
+    const ana = await prisma.usuario.findUniqueOrThrow({ where: { email: "user@ifsp.com" } });
     const r = await chamar("/checkins", { metodo: "POST", token, corpo: { usuarioId: ana.id, humor: 5, energia: 4, sono: null, estresse: 2, observacao: "  dia bom  " } });
     assert.equal(r.status, 201);
     assert.equal(r.corpo.pontosGanhos, 10);
@@ -461,7 +461,7 @@ describe("UC09 lembretes de pausa/descanso/check-in + banco", () => {
     // Outro usuário e RH
     const outro = await novoColaborador("OutroLembrete");
     assert.equal((await chamar(`/lembretes/${checkin.corpo.id}`, { metodo: "PUT", token: outro.token, corpo: { tipo: "PAUSA", horario: "10:00", diasSemana: [], ativo: true } })).status, 404);
-    const rh = await login("rh.demo@workwell.local");
+    const rh = await login("rh@ifsp.com");
     assert.equal((await chamar("/lembretes", { token: rh })).status, 403);
 
     // Excluir
@@ -473,8 +473,8 @@ describe("UC09 lembretes de pausa/descanso/check-in + banco", () => {
 // ---------------------------------------------------------------------------
 describe("UC08/UC14 desafios + UC10 recompensa + banco", () => {
   test("ciclo completo do desafio", async () => {
-    const rh = await login("rh.demo@workwell.local");
-    const gestora = await prisma.usuario.findUniqueOrThrow({ where: { email: "rh.demo@workwell.local" } });
+    const rh = await login("rh@ifsp.com");
+    const gestora = await prisma.usuario.findUniqueOrThrow({ where: { email: "rh@ifsp.com" } });
     const titulo = `[teste ${SUFIXO}] Caminhada`;
     const fim = chaveData(adicionarDias(hoje(), 7));
 
@@ -555,7 +555,7 @@ describe("UC08/UC14 desafios + UC10 recompensa + banco", () => {
   });
 
   test("desafio que ainda não começou: participa, mas não registra", async () => {
-    const rh = await login("rh.demo@workwell.local");
+    const rh = await login("rh@ifsp.com");
     const criado = await chamar("/desafios", {
       metodo: "POST",
       token: rh,
@@ -571,8 +571,8 @@ describe("UC08/UC14 desafios + UC10 recompensa + banco", () => {
 // ---------------------------------------------------------------------------
 describe("UC11 painel do RH: números conferidos com o banco", () => {
   test("indicadores dos últimos 7 dias batem com um cálculo independente", async () => {
-    const rh = await login("rh.demo@workwell.local");
-    const gestora = await prisma.usuario.findUniqueOrThrow({ where: { email: "rh.demo@workwell.local" } });
+    const rh = await login("rh@ifsp.com");
+    const gestora = await prisma.usuario.findUniqueOrThrow({ where: { email: "rh@ifsp.com" } });
     const r = await chamar("/dashboard", { token: rh });
     assert.equal(r.status, 200);
 
@@ -608,7 +608,7 @@ describe("UC11 painel do RH: números conferidos com o banco", () => {
   });
 
   test("filtros, limite de privacidade e validações", async () => {
-    const rh = await login("rh.demo@workwell.local");
+    const rh = await login("rh@ifsp.com");
     const tec = await chamar("/dashboard?setor=Tecnologia", { token: rh });
     assert.equal(tec.corpo.privacidade.dadosDisponiveis, true);
     assert.equal(tec.corpo.indicadores.colaboradores, await prisma.usuario.count({ where: { setor: "Tecnologia", perfil: "COLABORADOR", ativo: true, onboardingConcluido: true } }));
@@ -632,14 +632,14 @@ describe("UC11 painel do RH: números conferidos com o banco", () => {
   });
 
   test("quem não concluiu o onboarding não entra nos números", async () => {
-    const rh = await login("rh.demo@workwell.local");
+    const rh = await login("rh@ifsp.com");
     const antes = (await chamar("/dashboard", { token: rh })).corpo.indicadores.colaboradores;
     await chamar("/auth/cadastro", { metodo: "POST", corpo: { nome: "Sem Onboarding", email: `sem.onb.${SUFIXO}@teste.local`, senha: "senhaTeste1" } });
     assert.equal((await chamar("/dashboard", { token: rh })).corpo.indicadores.colaboradores, antes);
   });
 
   test("colaborador inativo não entra nos números", async () => {
-    const rh = await login("rh.demo@workwell.local");
+    const rh = await login("rh@ifsp.com");
     const antes = (await chamar("/dashboard", { token: rh })).corpo.indicadores.colaboradores;
     const { id } = await novoColaborador("Inativo");
     assert.equal((await chamar("/dashboard", { token: rh })).corpo.indicadores.colaboradores, antes + 1);
@@ -653,7 +653,7 @@ describe("UC11 painel do RH: números conferidos com o banco", () => {
 describe("segurança: limite de tentativas de login", () => {
   test("logins corretos não contam; a 11ª falha no mesmo minuto recebe 429", async () => {
     // Muitos logins corretos seguidos (vários colegas na mesma rede) não bloqueiam.
-    for (let i = 0; i < 15; i++) await login("ana.souza@workwell.local");
+    for (let i = 0; i < 15; i++) await login("user@ifsp.com");
     let ultimo = 0;
     for (let i = 0; i < 15; i++) {
       ultimo = (await chamar("/auth/login", { metodo: "POST", corpo: { email: "x@x.com", senha: "y" } })).status;

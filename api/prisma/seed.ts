@@ -16,7 +16,7 @@ export const SENHA_DEMO = "workwell123";
 
 /** Colaboradores fictícios. Tecnologia tem 6 pessoas para demonstrar o filtro por setor. */
 const COLABORADORES = [
-  { nome: "Ana Souza", email: "ana.souza@workwell.local", setor: "Tecnologia" },
+  { nome: "Ana Souza", email: "user@ifsp.com", setor: "Tecnologia" },
   { nome: "Bruno Lima", email: "bruno.lima@workwell.local", setor: "Tecnologia" },
   { nome: "Carla Mendes", email: "carla.mendes@workwell.local", setor: "Tecnologia" },
   { nome: "Daniel Alves", email: "daniel.alves@workwell.local", setor: "Tecnologia" },
@@ -36,8 +36,31 @@ const CATALOGO_HABITOS = [
   { nome: "Respiração consciente", descricao: "Reservar alguns minutos para reduzir o estresse.", categoria: CategoriaHabito.ESTRESSE },
 ];
 
+/**
+ * As contas principais da demonstração mudaram de e-mail. Se o banco ainda
+ * tiver o e-mail antigo, renomeamos a conta (mantendo o histórico) em vez de
+ * criar uma conta duplicada.
+ */
+const EMAILS_RENOMEADOS = [
+  { antigo: "ana.souza@workwell.local", novo: "user@ifsp.com" },
+  { antigo: "rh.demo@workwell.local", novo: "rh@ifsp.com" },
+];
+
+async function renomearContasAntigas() {
+  for (const { antigo, novo } of EMAILS_RENOMEADOS) {
+    const [contaAntiga, contaNova] = await Promise.all([
+      prisma.usuario.findUnique({ where: { email: antigo } }),
+      prisma.usuario.findUnique({ where: { email: novo } }),
+    ]);
+    if (contaAntiga && !contaNova) {
+      await prisma.usuario.update({ where: { id: contaAntiga.id }, data: { email: novo } });
+    }
+  }
+}
+
 async function main() {
   const senhaHash = await gerarHashSenha(SENHA_DEMO);
+  await renomearContasAntigas();
 
   // Empresa ---------------------------------------------------------------
   const empresa = await prisma.empresa.upsert({
@@ -81,12 +104,12 @@ async function main() {
 
   // Gestora de RH ----------------------------------------------------------
   const gestora = await prisma.usuario.upsert({
-    where: { email: "rh.demo@workwell.local" },
+    where: { email: "rh@ifsp.com" },
     update: { empresaId: empresa.id, nome: "Mariana Costa", ativo: true, onboardingConcluido: true, senhaHash },
     create: {
       empresaId: empresa.id,
       nome: "Mariana Costa",
-      email: "rh.demo@workwell.local",
+      email: "rh@ifsp.com",
       senhaHash,
       perfil: PerfilUsuario.GESTOR_RH,
       cargo: "Gestora de RH",

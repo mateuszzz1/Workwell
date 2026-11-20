@@ -52,7 +52,7 @@ describe("autenticação", () => {
   test("login com senha errada é recusado com mensagem genérica", async () => {
     const { status, corpo } = await chamar("/auth/login", {
       metodo: "POST",
-      corpo: { email: "ana.souza@workwell.local", senha: "errada123" },
+      corpo: { email: "user@ifsp.com", senha: "errada123" },
     });
     assert.equal(status, 401);
     assert.equal(corpo["erro"], "E-mail ou senha incorretos.");
@@ -66,7 +66,7 @@ describe("autenticação", () => {
   test("a resposta do login nunca traz o hash da senha", async () => {
     const { corpo } = await chamar("/auth/login", {
       metodo: "POST",
-      corpo: { email: "ana.souza@workwell.local", senha: SENHA_DEMO },
+      corpo: { email: "user@ifsp.com", senha: SENHA_DEMO },
     });
     assert.equal(JSON.stringify(corpo).includes("senhaHash"), false);
   });
@@ -120,7 +120,7 @@ describe("cadastro e onboarding (UC01/UC03)", () => {
   test("e-mail repetido é recusado", async () => {
     const { status } = await chamar("/auth/cadastro", {
       metodo: "POST",
-      corpo: { nome: "Outra", email: "ana.souza@workwell.local", senha: "senhaSegura1" },
+      corpo: { nome: "Outra", email: "user@ifsp.com", senha: "senhaSegura1" },
     });
     assert.equal(status, 409);
   });
@@ -141,18 +141,18 @@ describe("autorização e privacidade", () => {
   });
 
   test("RH não acessa check-ins nem hábitos", async () => {
-    const token = await login("rh.demo@workwell.local");
+    const token = await login("rh@ifsp.com");
     assert.equal((await chamar("/checkins/resumo", { token })).status, 403);
     assert.equal((await chamar("/habitos", { token })).status, 403);
   });
 
   test("não existe rota que liste usuários", async () => {
-    const token = await login("rh.demo@workwell.local");
+    const token = await login("rh@ifsp.com");
     assert.equal((await chamar("/usuarios", { token })).status, 404);
   });
 
   test("painel do RH traz só dados agregados", async () => {
-    const token = await login("rh.demo@workwell.local");
+    const token = await login("rh@ifsp.com");
     const { status, corpo } = await chamar("/dashboard", { token });
     assert.equal(status, 200);
     assert.equal(corpo["privacidade"].dadosDisponiveis, true);
@@ -163,7 +163,7 @@ describe("autorização e privacidade", () => {
   });
 
   test("setor com menos de 5 pessoas não exibe números", async () => {
-    const token = await login("rh.demo@workwell.local");
+    const token = await login("rh@ifsp.com");
     const pequeno = await chamar("/dashboard?setor=Financeiro", { token });
     assert.equal(pequeno.corpo["privacidade"].dadosDisponiveis, false);
     assert.equal(pequeno.corpo["indicadores"], undefined);
@@ -198,7 +198,7 @@ describe("lembretes (UC09)", () => {
       const outro = await login("camila.rocha@workwell.local");
       assert.equal((await chamar(`/lembretes/${id}`, { metodo: "DELETE", token: outro })).status, 404);
 
-      const rh = await login("rh.demo@workwell.local");
+      const rh = await login("rh@ifsp.com");
       assert.equal((await chamar("/lembretes", { token: rh })).status, 403);
     } finally {
       assert.equal((await chamar(`/lembretes/${id}`, { metodo: "DELETE", token })).status, 200);
@@ -208,7 +208,7 @@ describe("lembretes (UC09)", () => {
 
 describe("desafios (UC08/UC14)", () => {
   test("RH cria, colaborador participa e registra uma vez por dia", async () => {
-    const tokenRh = await login("rh.demo@workwell.local");
+    const tokenRh = await login("rh@ifsp.com");
     // Datas no fuso de São Paulo, igual à API.
     const hoje = chaveData(dataLocal());
     const daquiUmaSemana = chaveData(adicionarDias(dataLocal(), 7));

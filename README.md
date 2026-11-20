@@ -56,8 +56,8 @@ Todas usam a senha `workwell123` (dados fictícios, só para desenvolvimento).
 
 | Perfil | E-mail | Observação |
 |---|---|---|
-| Colaboradora | `ana.souza@workwell.local` | começa com o check-in de hoje pendente |
-| Gestora de RH | `rh.demo@workwell.local` | painel agregado e desafios |
+| Colaboradora | `user@ifsp.com` | começa com o check-in de hoje pendente |
+| Gestora de RH | `rh@ifsp.com` | painel agregado e desafios |
 | Outros colaboradores | `bruno.lima@`, `camila.rocha@`, ... `@workwell.local` | 10 no total; 6 no setor Tecnologia |
 
 Para testar o **onboarding**, use "Criar conta" na tela de login.

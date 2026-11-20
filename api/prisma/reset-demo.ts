@@ -10,7 +10,7 @@ import { prisma } from "../src/database/prisma.js";
 import { dataLocal } from "../src/utils/data.js";
 
 async function main() {
-  const ana = await prisma.usuario.findUnique({ where: { email: "ana.souza@workwell.local" }, select: { id: true } });
+  const ana = await prisma.usuario.findUnique({ where: { email: "user@ifsp.com" }, select: { id: true } });
   if (!ana) throw new Error("Usuária de demonstração não encontrada. Execute o seed.");
 
   await prisma.$transaction([

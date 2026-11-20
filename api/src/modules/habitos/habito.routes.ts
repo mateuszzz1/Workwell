@@ -1,13 +1,13 @@
+/**
+ * Rotas dos hábitos. Somente colaboradores logados e com onboarding concluído.
+ */
 import { Router } from "express";
-import { HabitoController } from "./habito.controller.js";
-import { HabitoService } from "./habito.service.js";
-import { iniciarSessaoDemo, limitarHabitos, validarSessaoHabitos } from "./habito-session.js";
+import { autenticar, exigirOnboarding, exigirPerfil } from "../../middlewares/autenticacao.js";
+import * as controller from "./habito.controller.js";
 
-const controller = new HabitoController(new HabitoService());
 export const habitoRoutes = Router();
-habitoRoutes.use(limitarHabitos);
-habitoRoutes.post("/sessao-demo", iniciarSessaoDemo);
-habitoRoutes.use(validarSessaoHabitos);
+
+habitoRoutes.use(autenticar, exigirPerfil("COLABORADOR"), exigirOnboarding);
 habitoRoutes.get("/", controller.listar);
 habitoRoutes.post("/", controller.criar);
 habitoRoutes.post("/importacao", controller.importar);

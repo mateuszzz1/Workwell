@@ -151,9 +151,9 @@ model Meta {
   registros RegistroHabito[]
   lembretes Lembrete[]
 
+  @@unique([usuarioId, origemLocalId])
   @@index([usuarioId, ativa])
   @@index([habitoId])
-  @@unique([usuarioId, origemLocalId])
 }
 
 model RegistroHabito {
@@ -182,14 +182,16 @@ model Lembrete {
   horario      DateTime     @db.Time(0)
   diasSemana   Int[]        @default([])
   ativo        Boolean      @default(true)
+  /// Quando o colaborador adia o lembrete, ele volta a aparecer neste instante.
+  adiadoAte    DateTime?
   criadoEm     DateTime     @default(now())
   atualizadoEm DateTime     @updatedAt
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   meta    Meta?   @relation(fields: [metaId], references: [id], onDelete: Cascade)
 
-  @@index([usuarioId, ativo])
   @@unique([metaId, horario])
+  @@index([usuarioId, ativo])
 }
 
 model Desafio {
@@ -200,6 +202,8 @@ model Desafio {
   descricao        String?
   dataInicio       DateTime      @db.Date
   dataFim          DateTime      @db.Date
+  /// Quantos registros (no máximo um por dia) concluem o desafio.
+  metaRegistros    Int           @default(5)
   pontosRecompensa Int           @default(0)
   status           StatusDesafio @default(ATIVO)
   criadoEm         DateTime      @default(now())
@@ -214,12 +218,14 @@ model Desafio {
 }
 
 model ParticipacaoDesafio {
-  usuarioId     Int
-  desafioId     Int
-  dataAdesao    DateTime  @default(now())
-  progresso     Int       @default(0)
-  concluido     Boolean   @default(false)
-  dataConclusao DateTime?
+  usuarioId      Int
+  desafioId      Int
+  dataAdesao     DateTime  @default(now())
+  progresso      Int       @default(0)
+  /// Último dia com registro; garante no máximo um registro por dia.
+  ultimoRegistro DateTime? @db.Date
+  concluido      Boolean   @default(false)
+  dataConclusao  DateTime?
 
   usuario Usuario @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
   desafio Desafio @relation(fields: [desafioId], references: [id], onDelete: Cascade)

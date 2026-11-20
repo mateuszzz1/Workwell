@@ -1,9 +1,13 @@
+/**
+ * Rotas do check-in. Somente colaboradores com onboarding concluído.
+ * O RH não tem nenhuma rota para ver check-ins individuais.
+ */
 import { Router } from "express";
-import { CheckinController } from "./checkin.controller.js";
-
-const checkinController = new CheckinController();
+import { autenticar, exigirOnboarding, exigirPerfil } from "../../middlewares/autenticacao.js";
+import * as controller from "./checkin.controller.js";
 
 export const checkinRoutes = Router();
 
-checkinRoutes.get("/usuario/:usuarioId/resumo", checkinController.resumo);
-checkinRoutes.post("/", checkinController.salvar);
+checkinRoutes.use(autenticar, exigirPerfil("COLABORADOR"), exigirOnboarding);
+checkinRoutes.get("/resumo", controller.resumo);
+checkinRoutes.post("/", controller.salvar);

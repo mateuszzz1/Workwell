@@ -1,13 +1,13 @@
+/**
+ * Controller do painel do RH.
+ */
 import type { Request, Response } from "express";
-import { gestorIdParamsSchema } from "./dashboard.schema.js";
-import { DashboardService } from "./dashboard.service.js";
+import { usuarioLogado } from "../../middlewares/autenticacao.js";
+import { filtrosDashboardSchema } from "./dashboard.schema.js";
+import * as dashboardService from "./dashboard.service.js";
 
-const dashboardService = new DashboardService();
-
-export class DashboardController {
-  resumo = async (req: Request, res: Response) => {
-    const { gestorId } = gestorIdParamsSchema.parse(req.params);
-    const resumo = await dashboardService.obterResumo(gestorId);
-    res.json(resumo);
-  };
+/** GET /api/dashboard?inicio=AAAA-MM-DD&fim=AAAA-MM-DD&setor=Tecnologia */
+export async function resumo(req: Request, res: Response) {
+  const filtros = filtrosDashboardSchema.parse(req.query);
+  res.json(await dashboardService.obterResumo(usuarioLogado(res), filtros));
 }

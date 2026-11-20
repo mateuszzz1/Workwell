@@ -1,3 +1,6 @@
+/**
+ * Tipos dos hábitos, espelhando as respostas da API de hábitos.
+ */
 export type IconeHabito = "water" | "coffee" | "exercise" | "sleep" | "meditation" | "custom";
 export type FrequenciaHabito = "DIARIA" | "DIAS_ESPECIFICOS" | "SEMANAL";
 export type ConfiguracaoHabito = {

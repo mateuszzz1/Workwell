@@ -1,161 +1,68 @@
-import { useEffect, useMemo, useState } from "react";
-import "./App.css";
-import { ColaboradorView } from "./components/ColaboradorView";
-import { ColaboradorNav } from "./components/ColaboradorNav";
-import type { PaginaColaborador } from "./components/ColaboradorNav";
-import { HabitosView } from "./components/HabitosView";
-import { RhView } from "./components/RhView";
-import { api } from "./services/api";
-import type { Usuario } from "./types";
+/**
+ * Componente raiz: decide qual tela mostrar.
+ *
+ *   ninguém logado                      -> tela de acesso (login / cadastro)
+ *   colaborador sem onboarding          -> onboarding
+ *   colaborador                         -> check-in, hábitos, progresso, lembretes, desafios, perfil
+ *   gestor de RH                        -> painel organizacional, desafios
+ *
+ * A navegação é um simples estado (`pagina`), sem biblioteca de rotas,
+ * para manter o projeto fácil de entender.
+ */
+import { useState } from "react";
+import { AppLayout, type Pagina } from "./components/layout/AppLayout";
+import { useSessao } from "./hooks/useSessao";
+import { AcessoPage } from "./pages/acesso/AcessoPage";
+import { OnboardingPage } from "./pages/acesso/OnboardingPage";
+import { DesafiosPage } from "./pages/colaborador/DesafiosPage";
+import { HabitosPage } from "./pages/colaborador/HabitosPage";
+import { InicioPage } from "./pages/colaborador/InicioPage";
+import { PerfilPage } from "./pages/colaborador/PerfilPage";
+import { LembretesPage } from "./pages/colaborador/LembretesPage";
+import { ProgressoPage } from "./pages/colaborador/ProgressoPage";
+import { DesafiosRhPage } from "./pages/rh/DesafiosRhPage";
+import { PainelRhPage } from "./pages/rh/PainelRhPage";
+import "./styles/app.css";
+import "./styles/telas.css";
 
-const EMAIL_COLABORADOR = "ana.souza@workwell.local";
-const EMAIL_RH = "rh.demo@workwell.local";
-
-async function buscarUsuarios() {
-  return api<Usuario[]>("/usuarios");
-}
-
-function iniciais(nome: string) {
-  return nome
-    .split(" ")
-    .slice(0, 2)
-    .map((parte) => parte[0])
-    .join("");
-}
+const PAGINAS_RH: Pagina[] = ["painel", "desafios"];
 
 export default function App() {
-  const [usuarios, setUsuarios] = useState<Usuario[]>([]);
-  const [emailSelecionado, setEmailSelecionado] = useState(EMAIL_COLABORADOR);
-  const [carregando, setCarregando] = useState(true);
-  const [erro, setErro] = useState<string | null>(null);
-  const [pagina, setPagina] = useState<PaginaColaborador>("inicio");
-
-  const perfisDemo = useMemo(
-    () => usuarios.filter((usuario) => [EMAIL_COLABORADOR, EMAIL_RH].includes(usuario.email)),
-    [usuarios]
-  );
-  const usuario = perfisDemo.find((perfil) => perfil.email === emailSelecionado);
-
-  async function atualizarUsuarios() {
-    const dados = await buscarUsuarios();
-    setUsuarios(dados);
-  }
-
-  useEffect(() => {
-    let ativo = true;
-    buscarUsuarios()
-      .then((dados) => {
-        if (!ativo) return;
-        setUsuarios(dados);
-        setErro(null);
-      })
-      .catch((falha: Error) => {
-        if (ativo) setErro(falha.message);
-      })
-      .finally(() => {
-        if (ativo) setCarregando(false);
-      });
-
-    return () => {
-      ativo = false;
-    };
-  }, []);
+  const { usuario, carregando } = useSessao();
+  // A página escolhida fica junto com o id de quem a escolheu: ao trocar de
+  // conta, a navegação recomeça na página inicial do novo perfil.
+  const [navegacao, setNavegacao] = useState<{ usuarioId: number | null; pagina: Pagina }>({ usuarioId: null, pagina: "inicio" });
 
   if (carregando) {
     return <div className="estado-pagina">Preparando sua experiência...</div>;
   }
 
-  if (erro || !usuario || perfisDemo.length < 2) {
-    return (
-      <div className="estado-pagina estado-erro">
-        <span className="estado-simbolo">!</span>
-        <h1>Não foi possível abrir a demonstração</h1>
-        <p>{erro ?? "Execute a carga de dados fictícios da API e tente novamente."}</p>
-      </div>
-    );
+  if (!usuario) {
+    return <AcessoPage />;
   }
 
+  if (usuario.perfil === "COLABORADOR" && !usuario.onboardingConcluido) {
+    return <OnboardingPage />;
+  }
+
+  const paginaInicial: Pagina = usuario.perfil === "GESTOR_RH" ? "painel" : "inicio";
+  const setPagina = (pagina: Pagina) => setNavegacao({ usuarioId: usuario.id, pagina });
+
+  // Página atual: a escolhida por este usuário, ou a inicial do perfil.
+  // Também garante que cada perfil só veja as próprias páginas.
+  let paginaAtual = navegacao.usuarioId === usuario.id ? navegacao.pagina : paginaInicial;
+  if (usuario.perfil === "GESTOR_RH" && !PAGINAS_RH.includes(paginaAtual)) paginaAtual = "painel";
+  if (usuario.perfil === "COLABORADOR" && paginaAtual === "painel") paginaAtual = "inicio";
+
   return (
-    <div
-      className={`app-shell${usuario.perfil === "COLABORADOR" ? " colaborador-shell" : ""}${usuario.perfil === "COLABORADOR" && pagina === "habitos" ? " habitos-shell" : ""}`}
-    >
-      <aside className="sidebar">
-        <div className="marca" aria-label="WorkWell">
-          <img className="marca-simbolo" src="/logo-workwell.webp" alt="" />
-          <span>WorkWell</span>
-        </div>
-
-        <nav className="navegacao" aria-label="Navegação principal">
-          <button
-            className={`nav-item${pagina !== "habitos" || usuario.perfil === "GESTOR_RH" ? " ativo" : ""}`}
-            type="button"
-            onClick={() => setPagina("inicio")}
-          >
-            <span className="nav-marcador" />
-            Visão geral
-          </button>
-          <button className="nav-item" type="button" disabled>
-            Check-ins
-            <span className="nav-futuro">MVP</span>
-          </button>
-          <button
-            className={`nav-item${pagina === "habitos" && usuario.perfil === "COLABORADOR" ? " ativo" : ""}`}
-            type="button"
-            disabled={usuario.perfil !== "COLABORADOR"}
-            onClick={() => setPagina("habitos")}
-          >
-            Metas e hábitos
-          </button>
-        </nav>
-
-        <div className="sidebar-rodape">
-          <span className="privacidade-ponto" />
-          <div>
-            <strong>Dados protegidos</strong>
-            <small>Ambiente acadêmico com dados fictícios</small>
-          </div>
-        </div>
-      </aside>
-
-      <section className="conteudo-shell">
-        <header className="topbar">
-          <span className="ambiente">Demonstração funcional</span>
-
-          <div className="seletor-perfil">
-            <label htmlFor="perfil-demo">Visualizar como</label>
-            <select
-              id="perfil-demo"
-              value={emailSelecionado}
-              onChange={(evento) => {
-                setEmailSelecionado(evento.target.value);
-                setPagina("inicio");
-              }}
-            >
-              {perfisDemo.map((perfil) => (
-                <option key={perfil.id} value={perfil.email}>
-                  {perfil.perfil === "GESTOR_RH" ? "RH" : "Colaborador"} — {perfil.nome}
-                </option>
-              ))}
-            </select>
-            <span className="avatar">{iniciais(usuario.nome)}</span>
-          </div>
-        </header>
-
-        <main className="conteudo-principal">
-          {usuario.perfil === "COLABORADOR" && pagina === "habitos" ? (
-            <HabitosView key={usuario.id} usuario={usuario} />
-          ) : usuario.perfil === "COLABORADOR" ? (
-            <ColaboradorView
-              usuario={usuario}
-              onUsuarioAtualizado={atualizarUsuarios}
-              mostrarProgresso={pagina === "progresso"}
-            />
-          ) : (
-            <RhView usuario={usuario} />
-          )}
-        </main>
-        {usuario.perfil === "COLABORADOR" && <ColaboradorNav pagina={pagina} onNavegar={setPagina} />}
-      </section>
-    </div>
+    <AppLayout pagina={paginaAtual} onNavegar={setPagina}>
+      {paginaAtual === "inicio" && <InicioPage onVerProgresso={() => setPagina("progresso")} />}
+      {paginaAtual === "progresso" && <ProgressoPage />}
+      {paginaAtual === "lembretes" && <LembretesPage />}
+      {paginaAtual === "perfil" && <PerfilPage />}
+      {paginaAtual === "habitos" && <HabitosPage key={usuario.id} />}
+      {paginaAtual === "desafios" && (usuario.perfil === "GESTOR_RH" ? <DesafiosRhPage /> : <DesafiosPage />)}
+      {paginaAtual === "painel" && <PainelRhPage />}
+    </AppLayout>
   );
 }

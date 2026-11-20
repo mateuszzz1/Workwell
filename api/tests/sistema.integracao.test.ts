@@ -15,7 +15,7 @@ import { prisma } from "../src/database/prisma.js";
 import { momentoAtual } from "../src/modules/lembretes/lembrete.regras.js";
 import { adicionarDias, chaveData, dataLocal } from "../src/utils/data.js";
 
-const SENHA_DEMO = "workwell123";
+const SENHA_DEMO = "12345678";
 const SUFIXO = Date.now();
 let base = "";
 let servidor: ReturnType<typeof app.listen>;

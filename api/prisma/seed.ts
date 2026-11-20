@@ -12,7 +12,7 @@ import { MEDALHAS } from "../src/modules/gamificacao/gamificacao.regras.js";
 import { adicionarDias, dataLocal } from "../src/utils/data.js";
 import { gerarHashSenha } from "../src/utils/senha.js";
 
-export const SENHA_DEMO = "workwell123";
+export const SENHA_DEMO = "12345678";
 
 /** Colaboradores fictícios. Tecnologia tem 6 pessoas para demonstrar o filtro por setor. */
 const COLABORADORES = [

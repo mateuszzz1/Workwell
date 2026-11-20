@@ -1,3 +1,8 @@
+/**
+ * Lembretes dentro da aplicação (UC09): a cada 15 segundos verifica se
+ * algum hábito tem lembrete para o horário atual e mostra um aviso.
+ * Cada lembrete aparece uma única vez.
+ */
 import { useEffect, useRef, useState } from "react";
 import { lembretesDoMomento } from "../services/lembretes-habitos";
 import type { PaginaHabitos } from "../types/habitos";

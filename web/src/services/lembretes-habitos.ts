@@ -1,3 +1,6 @@
+/**
+ * Calcula quais lembretes devem aparecer agora (horário de São Paulo).
+ */
 import { dataSaoPaulo } from "./habitos-api";
 import type { PaginaHabitos } from "../types/habitos";
 

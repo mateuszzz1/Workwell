@@ -1,43 +1,21 @@
-import { api, ApiRequestError } from "./api";
-import { carregarHabitos } from "./habitos";
+/**
+ * Chamadas da API de hábitos e utilitários de data usados pelas telas de hábitos.
+ */
+import { api } from "./api";
+import { carregarHabitos } from "./habitos-legado";
 import type { ConfiguracaoHabito, DetalheHabito, PaginaHabitos, RegistroHabitoInput } from "../types/habitos";
 
-const sessoes = new Map<number, Promise<string>>();
 const inicializacoes = new Map<number, Promise<void>>();
 
-async function tokenUsuario(usuarioId: number) {
-  if (!sessoes.has(usuarioId))
-    sessoes.set(
-      usuarioId,
-      api<{ token: string }>("/habitos/sessao-demo", {
-        method: "POST",
-        body: JSON.stringify({ usuarioId })
-      })
-        .then((sessao) => sessao.token)
-        .catch((erro) => {
-          sessoes.delete(usuarioId);
-          throw erro;
-        })
-    );
-  return sessoes.get(usuarioId)!;
+/** Chama uma rota de hábitos. O token de login é enviado automaticamente por api(). */
+function requisicao<T>(caminho: string, opcoes: RequestInit = {}): Promise<T> {
+  return api<T>(`/habitos${caminho}`, opcoes);
 }
 
-async function requisicao<T>(usuarioId: number, caminho: string, opcoes: RequestInit = {}, repetir = true): Promise<T> {
-  const token = await tokenUsuario(usuarioId);
-  try {
-    return await api<T>(`/habitos${caminho}`, {
-      ...opcoes,
-      headers: { ...opcoes.headers, Authorization: `Bearer ${token}` }
-    });
-  } catch (erro) {
-    if (erro instanceof ApiRequestError && erro.status === 401 && repetir) {
-      sessoes.delete(usuarioId);
-      return requisicao<T>(usuarioId, caminho, opcoes, false);
-    }
-    throw erro;
-  }
-}
-
+/**
+ * Versões antigas guardavam os hábitos só no navegador (localStorage).
+ * Na primeira abertura, enviamos esses dados ao banco uma única vez.
+ */
 async function importarCache(usuarioId: number) {
   const marcador = `workwell-habitos-migrados-v1-${usuarioId}`;
   let existe: boolean;
@@ -50,7 +28,7 @@ async function importarCache(usuarioId: number) {
   const { registros } = carregarHabitos(usuarioId, dataSaoPaulo(), false);
   const validos = registros.filter((registro) => registro.data <= dataSaoPaulo());
   for (let indice = 0; indice < validos.length; indice += 10)
-    await requisicao(usuarioId, "/importacao", {
+    await requisicao("/importacao", {
       method: "POST",
       body: JSON.stringify({ registros: validos.slice(indice, indice + 10) })
     });
@@ -61,6 +39,7 @@ async function importarCache(usuarioId: number) {
   }
 }
 
+/** Executa a importação do cache antigo uma única vez por usuário. */
 export async function iniciarHabitos(usuarioId: number) {
   if (!inicializacoes.has(usuarioId))
     inicializacoes.set(
@@ -73,6 +52,7 @@ export async function iniciarHabitos(usuarioId: number) {
   await inicializacoes.get(usuarioId);
 }
 
+/** Data de hoje (AAAA-MM-DD) no fuso de São Paulo, igual à API. */
 export function dataSaoPaulo(data = new Date()) {
   const partes = new Intl.DateTimeFormat("en-CA", {
     timeZone: "America/Sao_Paulo",
@@ -84,6 +64,7 @@ export function dataSaoPaulo(data = new Date()) {
   return `${valores.year}-${valores.month}-${valores.day}`;
 }
 
+/** Os 7 dias (domingo a sábado) da semana que contém a data. */
 export function diasDaSemana(data: string) {
   const inicio = new Date(`${data}T12:00:00Z`);
   inicio.setUTCDate(inicio.getUTCDate() - inicio.getUTCDay());
@@ -94,20 +75,22 @@ export function diasDaSemana(data: string) {
   });
 }
 
+/** Formata uma data AAAA-MM-DD em português (ex.: "seg, 20/11"). */
 export const formatarDia = (data: string, opcoes: Intl.DateTimeFormatOptions) =>
   new Intl.DateTimeFormat("pt-BR", { ...opcoes, timeZone: "UTC" }).format(new Date(`${data}T12:00:00Z`));
-export const listarHabitos = (usuarioId: number, data: string) => requisicao<PaginaHabitos>(usuarioId, `?data=${data}`);
-export const detalharHabito = (usuarioId: number, id: number, data: string) =>
-  requisicao<DetalheHabito>(usuarioId, `/${id}?data=${data}`);
-export const salvarConfiguracaoHabito = (usuarioId: number, dados: ConfiguracaoHabito, id?: number) =>
-  requisicao<DetalheHabito>(usuarioId, id ? `/${id}` : "", {
+// --- Rotas da API de hábitos ---------------------------------------------------
+export const listarHabitos = (data: string) => requisicao<PaginaHabitos>(`?data=${data}`);
+export const detalharHabito = (id: number, data: string) =>
+  requisicao<DetalheHabito>(`/${id}?data=${data}`);
+export const salvarConfiguracaoHabito = (dados: ConfiguracaoHabito, id?: number) =>
+  requisicao<DetalheHabito>(id ? `/${id}` : "", {
     method: id ? "PUT" : "POST",
     body: JSON.stringify(dados)
   });
-export const registrarHabito = (usuarioId: number, id: number, dados: RegistroHabitoInput) =>
-  requisicao<DetalheHabito>(usuarioId, `/${id}/registro`, {
+export const registrarHabito = (id: number, dados: RegistroHabitoInput) =>
+  requisicao<DetalheHabito>(`/${id}/registro`, {
     method: "PUT",
     body: JSON.stringify(dados)
   });
-export const excluirHabito = (usuarioId: number, id: number) =>
-  requisicao<{ mensagem: string }>(usuarioId, `/${id}`, { method: "DELETE" });
+export const excluirHabito = (id: number) =>
+  requisicao<{ mensagem: string }>(`/${id}`, { method: "DELETE" });

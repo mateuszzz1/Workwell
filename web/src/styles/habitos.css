@@ -30,7 +30,7 @@
 .habitos-data {
   display: grid;
   gap: 4px;
-  font-size: 10px;
+  font-size: 12px;
   color: var(--texto-suave);
 }
 .habitos-data input {
@@ -159,7 +159,7 @@
 .habitos-ritmo p {
   margin: 5px 0 0;
   color: var(--texto-suave);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.4;
 }
 .habitos-percentual {
@@ -177,7 +177,7 @@
 }
 .habitos-percentual small {
   color: var(--texto-suave);
-  font-size: 10px;
+  font-size: 12px;
 }
 .habitos-body-grid {
   display: grid;
@@ -270,7 +270,7 @@
 }
 .habito-descricao > small {
   color: var(--texto-suave);
-  font-size: 9px;
+  font-size: 12px;
 }
 .estado-concluido .habito-descricao > small {
   color: var(--cor-floresta);
@@ -297,7 +297,7 @@
 .habito-card-acao .botao-secundario {
   width: 100%;
   min-height: 44px;
-  font-size: 11px;
+  font-size: 12px;
   padding: 8px;
   background: var(--cor-verde-claro);
   border: 0;
@@ -366,12 +366,12 @@
   display: grid;
   justify-items: center;
   gap: 8px;
-  font-size: 11px;
+  font-size: 12px;
   color: var(--texto-suave);
 }
 .habitos-grafico li > span {
   white-space: nowrap;
-  font-size: 10px;
+  font-size: 12px;
 }
 .habitos-grafico-trilho {
   position: relative;
@@ -502,7 +502,7 @@
   background: var(--branco);
   text-align: left;
   color: var(--texto);
-  font-size: 11px;
+  font-size: 12px;
   font-weight: 600;
   min-width: 0;
 }
@@ -530,7 +530,7 @@
   margin-left: auto;
   border: 2px solid var(--borda);
   border-radius: 50%;
-  font-size: 11px;
+  font-size: 12px;
 }
 .selecionado .categoria-marca {
   border-color: var(--cor-floresta);
@@ -627,7 +627,7 @@
   color: var(--texto-suave);
   min-height: 42px;
   padding: 8px 4px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .habito-segmentos .selecionado {
   color: var(--cor-floresta);
@@ -647,7 +647,7 @@
   border-radius: 10px;
   background: var(--branco);
   color: var(--texto);
-  font-size: 11px;
+  font-size: 12px;
 }
 .habito-dias-especificos button[aria-pressed="true"] {
   background: var(--cor-verde-claro);
@@ -751,7 +751,7 @@
   display: block;
   margin-top: 4px;
   color: var(--texto-suave);
-  font-size: 11px;
+  font-size: 12px;
 }
 .habito-previa-card {
   display: grid;
@@ -794,7 +794,7 @@
   display: block;
   color: var(--cor-erro-texto);
   margin-top: 6px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .habito-form-grid [aria-invalid="true"] {
   border-color: var(--cor-terracota) !important;
@@ -877,7 +877,7 @@
 }
 .habito-drawer-conteudo .painel-titulo small {
   color: var(--texto-suave);
-  font-size: 10px;
+  font-size: 12px;
 }
 .habito-detalhe-resumo {
   display: grid;
@@ -915,7 +915,7 @@
 }
 .habito-detalhe-controles .botao-primario {
   padding: 8px;
-  font-size: 11px;
+  font-size: 12px;
 }
 .habito-detalhe-controles .habito-contador strong {
   font-size: 12px;
@@ -949,7 +949,7 @@
   line-height: 1.5;
 }
 .habito-timer .habitos-link {
-  font-size: 11px;
+  font-size: 12px;
   min-height: 32px;
 }
 .habito-lembrete-config {
@@ -1003,7 +1003,7 @@
 .habito-detalhe-acoes > small {
   margin: 12px 0 0;
   color: var(--texto-suave);
-  font-size: 11px;
+  font-size: 12px;
   line-height: 1.5;
 }
 .habito-historico-completo {
@@ -1018,7 +1018,7 @@
   gap: 8px;
   padding: 9px 0;
   border-bottom: 1px solid var(--borda);
-  font-size: 11px;
+  font-size: 12px;
 }
 .habito-nota {
   padding: 14px;
@@ -1097,7 +1097,7 @@
     border-radius: var(--raio-icone);
     background: var(--cor-transparente);
     color: var(--cor-texto-suave);
-    font-size: 10px;
+    font-size: 12px;
     font-weight: 500;
     line-height: 13px;
   }
@@ -1119,15 +1119,10 @@
     border: 0;
     background: var(--cor-transparente);
   }
-  .habitos-shell .seletor-perfil select {
-    height: 30px;
-    max-width: 220px;
-    font-size: 10px;
-  }
   .habitos-shell .avatar {
     width: 26px;
     height: 26px;
-    font-size: 10px;
+    font-size: 12px;
     margin-left: auto;
   }
   .habitos-shell .conteudo-principal {
@@ -1200,7 +1195,7 @@
     padding: 4px;
   }
   .habitos-semana button {
-    font-size: 10px;
+    font-size: 12px;
     min-height: 58px;
   }
   .habitos-hoje {
@@ -1208,7 +1203,7 @@
   }
   .habitos-hoje > span {
     max-width: 140px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .habitos-ritmo {
     padding: 18px;
@@ -1368,7 +1363,7 @@
   }
   .habitos-cabecalho-acoes .botao-primario {
     padding: 0 12px;
-    font-size: 11px;
+    font-size: 12px;
   }
   .habitos-data input {
     max-width: 148px;
@@ -1385,7 +1380,7 @@
     width: 100%;
   }
   .habito-segmentos button {
-    font-size: 10px;
+    font-size: 12px;
   }
   .habitos-ritmo-icone {
     display: none;

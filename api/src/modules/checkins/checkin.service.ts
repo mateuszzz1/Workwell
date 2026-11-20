@@ -1,158 +1,122 @@
+/**
+ * Check-in diário (UC04) e progresso pessoal (UC07).
+ *
+ * Regras:
+ * - um check-in por dia por colaborador (garantido também no banco por @@unique);
+ * - registrar de novo no mesmo dia EDITA o check-in, sem dar pontos outra vez;
+ * - o primeiro check-in do dia vale pontos e pode conceder medalhas (UC10).
+ */
 import { prisma } from "../../database/prisma.js";
-import { AppError } from "../../errors/AppError.js";
-import { PerfilUsuario } from "../../generated/prisma/enums.js";
 import { adicionarDias, dataLocal } from "../../utils/data.js";
+import { media, semNulos } from "../../utils/estatistica.js";
+import { DIAS_PARA_CONSISTENCIA, MEDALHAS, PONTOS } from "../gamificacao/gamificacao.regras.js";
+import { adicionarPontos, concederMedalha } from "../gamificacao/gamificacao.service.js";
+import { calcularSequencia } from "./checkin.regras.js";
 import type { SalvarCheckinInput } from "./checkin.schema.js";
 
-export class CheckinService {
-  async obterResumo(usuarioId: number) {
-    await this.validarColaborador(usuarioId);
+const camposCheckin = {
+  id: true,
+  data: true,
+  humor: true,
+  energia: true,
+  sono: true,
+  estresse: true,
+  observacao: true,
+} as const;
 
-    const hoje = dataLocal();
-    const inicio = adicionarDias(hoje, -6);
-    const checkins = await prisma.checkin.findMany({
-      where: { usuarioId, data: { gte: inicio, lte: hoje } },
-      orderBy: { data: "asc" },
-      select: {
-        id: true,
-        data: true,
-        humor: true,
-        energia: true,
-        sono: true,
-        estresse: true,
-        observacao: true,
-      },
-    });
+/**
+ * Resumo do período (7 ou 30 dias): check-in de hoje, histórico, médias e sequência.
+ * O histórico alimenta os gráficos semanal e mensal da página Progresso.
+ */
+export async function obterResumo(usuarioId: number, dias = 7) {
+  const hoje = dataLocal();
+  const inicio = adicionarDias(hoje, -(dias - 1));
 
-    const checkinHoje = checkins.find(
-      (checkin) => checkin.data.getTime() === hoje.getTime(),
-    );
+  const historico = await prisma.checkin.findMany({
+    where: { usuarioId, data: { gte: inicio, lte: hoje } },
+    orderBy: { data: "asc" },
+    select: camposCheckin,
+  });
 
-    return {
-      hoje: hoje.toISOString().slice(0, 10),
-      checkinHoje: checkinHoje ?? null,
-      historico: checkins,
-      sequencia: this.calcularSequencia(checkins.map((checkin) => checkin.data)),
-      medias: {
-        humor: this.media(checkins.map((checkin) => checkin.humor)),
-        energia: this.media(checkins.map((checkin) => checkin.energia)),
-        sono: this.media(
-          checkins.flatMap((checkin) =>
-            checkin.sono === null ? [] : [checkin.sono],
-          ),
-        ),
-        estresse: this.media(
-          checkins.flatMap((checkin) =>
-            checkin.estresse === null ? [] : [checkin.estresse],
-          ),
-        ),
-      },
-    };
-  }
+  // Para a sequência buscamos mais dias (até 60), não só a última semana.
+  const datasRecentes = await prisma.checkin.findMany({
+    where: { usuarioId, data: { gte: adicionarDias(hoje, -60) } },
+    select: { data: true },
+  });
 
-  async salvar(dados: SalvarCheckinInput) {
-    await this.validarColaborador(dados.usuarioId);
+  return {
+    hoje: hoje.toISOString().slice(0, 10),
+    dias,
+    checkinHoje: historico.find((checkin) => checkin.data.getTime() === hoje.getTime()) ?? null,
+    historico,
+    sequencia: calcularSequencia(
+      datasRecentes.map((registro) => registro.data),
+      hoje,
+    ),
+    medias: {
+      humor: media(historico.map((checkin) => checkin.humor)),
+      energia: media(historico.map((checkin) => checkin.energia)),
+      sono: media(semNulos(historico.map((checkin) => checkin.sono))),
+      estresse: media(semNulos(historico.map((checkin) => checkin.estresse))),
+    },
+  };
+}
 
-    const hoje = dataLocal();
-    const existente = await prisma.checkin.findUnique({
-      where: { usuarioId_data: { usuarioId: dados.usuarioId, data: hoje } },
+/** Cria o check-in de hoje ou atualiza o já existente. */
+export async function salvar(usuarioId: number, dados: SalvarCheckinInput) {
+  const hoje = dataLocal();
+  const valores = {
+    humor: dados.humor,
+    energia: dados.energia,
+    sono: dados.sono ?? null,
+    estresse: dados.estresse ?? null,
+    observacao: dados.observacao || null,
+  };
+
+  // Tudo dentro de uma transação: check-in, pontos e medalhas são gravados juntos.
+  return prisma.$transaction(async (tx) => {
+    const existente = await tx.checkin.findUnique({
+      where: { usuarioId_data: { usuarioId, data: hoje } },
       select: { id: true },
     });
 
-    const resultado = await prisma.$transaction(async (tx) => {
-      const checkin = await tx.checkin.upsert({
-        where: { usuarioId_data: { usuarioId: dados.usuarioId, data: hoje } },
-        update: {
-          humor: dados.humor,
-          energia: dados.energia,
-          sono: dados.sono ?? null,
-          estresse: dados.estresse ?? null,
-          observacao: dados.observacao || null,
-        },
-        create: {
-          usuarioId: dados.usuarioId,
-          data: hoje,
-          humor: dados.humor,
-          energia: dados.energia,
-          sono: dados.sono ?? null,
-          estresse: dados.estresse ?? null,
-          observacao: dados.observacao || null,
-        },
-      });
-
-      if (!existente) {
-        await tx.usuario.update({
-          where: { id: dados.usuarioId },
-          data: { pontosTotal: { increment: 10 } },
-        });
-
-        const medalha = await tx.medalha.findUnique({
-          where: { nome: "Primeiro passo" },
-          select: { id: true },
-        });
-
-        if (medalha) {
-          await tx.conquistaMedalha.upsert({
-            where: {
-              usuarioId_medalhaId: {
-                usuarioId: dados.usuarioId,
-                medalhaId: medalha.id,
-              },
-            },
-            update: {},
-            create: { usuarioId: dados.usuarioId, medalhaId: medalha.id },
-          });
-        }
-      }
-
-      return checkin;
+    const checkin = await tx.checkin.upsert({
+      where: { usuarioId_data: { usuarioId, data: hoje } },
+      update: valores,
+      create: { usuarioId, data: hoje, ...valores },
+      select: camposCheckin,
     });
+
+    if (existente) {
+      return { checkin, criado: false, pontosGanhos: 0, medalhasNovas: [], mensagem: "Check-in de hoje atualizado." };
+    }
+
+    // Primeiro check-in do dia: pontos e medalhas.
+    await adicionarPontos(tx, usuarioId, PONTOS.CHECKIN);
+    const medalhasNovas: string[] = [];
+
+    if (await concederMedalha(tx, usuarioId, "PRIMEIRO_PASSO")) {
+      medalhasNovas.push(MEDALHAS.PRIMEIRO_PASSO.nome);
+    }
+
+    const datas = await tx.checkin.findMany({
+      where: { usuarioId, data: { gte: adicionarDias(hoje, -DIAS_PARA_CONSISTENCIA) } },
+      select: { data: true },
+    });
+    const sequencia = calcularSequencia(
+      datas.map((registro) => registro.data),
+      hoje,
+    );
+    if (sequencia >= DIAS_PARA_CONSISTENCIA && (await concederMedalha(tx, usuarioId, "CONSISTENCIA"))) {
+      medalhasNovas.push(MEDALHAS.CONSISTENCIA.nome);
+    }
 
     return {
-      checkin: resultado,
-      criado: !existente,
-      pontosGanhos: existente ? 0 : 10,
-      mensagem: existente
-        ? "Check-in de hoje atualizado."
-        : "Check-in registrado. Você ganhou 10 pontos!",
+      checkin,
+      criado: true,
+      pontosGanhos: PONTOS.CHECKIN,
+      medalhasNovas,
+      mensagem: `Check-in registrado. Você ganhou ${PONTOS.CHECKIN} pontos!`,
     };
-  }
-
-  private async validarColaborador(usuarioId: number) {
-    const usuario = await prisma.usuario.findUnique({
-      where: { id: usuarioId },
-      select: { perfil: true, ativo: true },
-    });
-
-    if (!usuario || !usuario.ativo) {
-      throw new AppError("Colaborador não encontrado.", 404);
-    }
-
-    if (usuario.perfil !== PerfilUsuario.COLABORADOR) {
-      throw new AppError("Este perfil não pode realizar check-ins.", 403);
-    }
-  }
-
-  private media(valores: number[]) {
-    if (valores.length === 0) return null;
-    const total = valores.reduce((soma, valor) => soma + valor, 0);
-    return Number((total / valores.length).toFixed(1));
-  }
-
-  private calcularSequencia(datas: Date[]) {
-    if (datas.length === 0) return 0;
-
-    const dias = new Set(datas.map((data) => data.toISOString().slice(0, 10)));
-    let cursor = dataLocal();
-    if (!dias.has(cursor.toISOString().slice(0, 10))) {
-      cursor = adicionarDias(cursor, -1);
-    }
-
-    let sequencia = 0;
-    while (dias.has(cursor.toISOString().slice(0, 10))) {
-      sequencia += 1;
-      cursor = adicionarDias(cursor, -1);
-    }
-    return sequencia;
-  }
+  });
 }

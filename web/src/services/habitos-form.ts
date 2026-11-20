@@ -1,3 +1,7 @@
+/**
+ * Regras do formulário de hábitos no navegador: categorias disponíveis,
+ * configuração inicial e validação antes de enviar à API.
+ */
 import type { ConfiguracaoHabito, Habito, IconeHabito } from "../types/habitos";
 
 export const categoriasHabito: {

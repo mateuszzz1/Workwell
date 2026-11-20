@@ -1,108 +1,74 @@
+/**
+ * Carga de dados FICTÍCIOS para desenvolvimento e demonstração.
+ *
+ * Rode com `npm run prisma:seed` (ou `db:setup`). Usa `upsert` em tudo, então
+ * pode ser executado várias vezes sem duplicar registros.
+ *
+ * Todos os usuários de demonstração têm a senha SENHA_DEMO.
+ */
 import { prisma } from "../src/database/prisma.js";
-import {
-  CategoriaHabito,
-  PerfilUsuario,
-} from "../src/generated/prisma/enums.js";
+import { CategoriaHabito, PerfilUsuario } from "../src/generated/prisma/enums.js";
+import { MEDALHAS } from "../src/modules/gamificacao/gamificacao.regras.js";
 import { adicionarDias, dataLocal } from "../src/utils/data.js";
+import { gerarHashSenha } from "../src/utils/senha.js";
+
+export const SENHA_DEMO = "workwell123";
+
+/** Colaboradores fictícios. Tecnologia tem 6 pessoas para demonstrar o filtro por setor. */
+const COLABORADORES = [
+  { nome: "Ana Souza", email: "ana.souza@workwell.local", setor: "Tecnologia" },
+  { nome: "Bruno Lima", email: "bruno.lima@workwell.local", setor: "Tecnologia" },
+  { nome: "Carla Mendes", email: "carla.mendes@workwell.local", setor: "Tecnologia" },
+  { nome: "Daniel Alves", email: "daniel.alves@workwell.local", setor: "Tecnologia" },
+  { nome: "Eduarda Reis", email: "eduarda.reis@workwell.local", setor: "Tecnologia" },
+  { nome: "Felipe Nunes", email: "felipe.nunes@workwell.local", setor: "Tecnologia" },
+  { nome: "Camila Rocha", email: "camila.rocha@workwell.local", setor: "Financeiro" },
+  { nome: "Diego Martins", email: "diego.martins@workwell.local", setor: "Operações" },
+  { nome: "Elisa Oliveira", email: "elisa.oliveira@workwell.local", setor: "Comercial" },
+  { nome: "Fábio Santos", email: "fabio.santos@workwell.local", setor: "Pessoas" },
+];
+
+const CATALOGO_HABITOS = [
+  { nome: "Sono regular", descricao: "Manter uma rotina consistente de sono.", categoria: CategoriaHabito.SONO },
+  { nome: "Atividade física", descricao: "Realizar uma atividade física adequada à rotina.", categoria: CategoriaHabito.ATIVIDADE_FISICA },
+  { nome: "Alimentação equilibrada", descricao: "Registrar uma escolha alimentar equilibrada.", categoria: CategoriaHabito.ALIMENTACAO },
+  { nome: "Pausa para alongamento", descricao: "Fazer uma pausa curta durante o expediente.", categoria: CategoriaHabito.PAUSA },
+  { nome: "Respiração consciente", descricao: "Reservar alguns minutos para reduzir o estresse.", categoria: CategoriaHabito.ESTRESSE },
+];
 
 async function main() {
+  const senhaHash = await gerarHashSenha(SENHA_DEMO);
+
+  // Empresa ---------------------------------------------------------------
   const empresa = await prisma.empresa.upsert({
     where: { cnpj: "00.000.000/0000-00" },
     update: { ativa: true },
-    create: {
-      nome: "Empresa Demonstração WorkWell",
-      cnpj: "00.000.000/0000-00",
-      porte: "Médio",
-    },
+    create: { nome: "Empresa Demonstração WorkWell", cnpj: "00.000.000/0000-00", porte: "Médio" },
   });
 
-  const habitos = [
-    {
-      nome: "Sono regular",
-      descricao: "Manter uma rotina consistente de sono.",
-      categoria: CategoriaHabito.SONO,
-    },
-    {
-      nome: "Atividade física",
-      descricao: "Realizar uma atividade física adequada à rotina.",
-      categoria: CategoriaHabito.ATIVIDADE_FISICA,
-    },
-    {
-      nome: "Alimentação equilibrada",
-      descricao: "Registrar uma escolha alimentar equilibrada.",
-      categoria: CategoriaHabito.ALIMENTACAO,
-    },
-    {
-      nome: "Pausa para alongamento",
-      descricao: "Fazer uma pausa curta durante o expediente.",
-      categoria: CategoriaHabito.PAUSA,
-    },
-    {
-      nome: "Respiração consciente",
-      descricao: "Reservar alguns minutos para reduzir o estresse.",
-      categoria: CategoriaHabito.ESTRESSE,
-    },
-  ];
-
-  for (const habito of habitos) {
+  // Catálogo de hábitos e medalhas -----------------------------------------
+  for (const habito of CATALOGO_HABITOS) {
     await prisma.habito.upsert({
-      where: {
-        nome_categoria: {
-          nome: habito.nome,
-          categoria: habito.categoria,
-        },
-      },
+      where: { nome_categoria: { nome: habito.nome, categoria: habito.categoria } },
       update: { descricao: habito.descricao, ativo: true },
       create: habito,
     });
   }
+  for (const medalha of Object.values(MEDALHAS)) {
+    await prisma.medalha.upsert({ where: { nome: medalha.nome }, update: {}, create: medalha });
+  }
 
-  await prisma.medalha.upsert({
-    where: { nome: "Primeiro passo" },
-    update: {},
-    create: {
-      nome: "Primeiro passo",
-      descricao: "Concedida após o primeiro check-in.",
-      criterio: "Realizar 1 check-in diário.",
-      icone: "primeiro-passo",
-    },
-  });
-
-  await prisma.medalha.upsert({
-    where: { nome: "Consistência" },
-    update: {},
-    create: {
-      nome: "Consistência",
-      descricao: "Concedida por uma sequência de check-ins.",
-      criterio: "Realizar check-in por 7 dias consecutivos.",
-      icone: "consistencia",
-    },
-  });
-
-  const colaboradoresDemo = [
-    { nome: "Ana Souza", email: "ana.souza@workwell.local", setor: "Tecnologia" },
-    { nome: "Bruno Lima", email: "bruno.lima@workwell.local", setor: "Tecnologia" },
-    { nome: "Camila Rocha", email: "camila.rocha@workwell.local", setor: "Financeiro" },
-    { nome: "Diego Martins", email: "diego.martins@workwell.local", setor: "Operações" },
-    { nome: "Elisa Oliveira", email: "elisa.oliveira@workwell.local", setor: "Comercial" },
-    { nome: "Fábio Santos", email: "fabio.santos@workwell.local", setor: "Pessoas" },
-  ];
-
+  // Colaboradores ----------------------------------------------------------
   const colaboradores: Array<{ id: number }> = [];
-  for (const colaborador of colaboradoresDemo) {
+  for (const colaborador of COLABORADORES) {
     const usuario = await prisma.usuario.upsert({
       where: { email: colaborador.email },
-      update: {
-        empresaId: empresa.id,
-        nome: colaborador.nome,
-        setor: colaborador.setor,
-        ativo: true,
-        onboardingConcluido: true,
-      },
+      update: { empresaId: empresa.id, nome: colaborador.nome, setor: colaborador.setor, ativo: true, onboardingConcluido: true, senhaHash },
       create: {
         empresaId: empresa.id,
         nome: colaborador.nome,
         email: colaborador.email,
+        senhaHash,
         perfil: PerfilUsuario.COLABORADOR,
         cargo: "Analista",
         setor: colaborador.setor,
@@ -113,18 +79,15 @@ async function main() {
     colaboradores.push(usuario);
   }
 
-  await prisma.usuario.upsert({
+  // Gestora de RH ----------------------------------------------------------
+  const gestora = await prisma.usuario.upsert({
     where: { email: "rh.demo@workwell.local" },
-    update: {
-      empresaId: empresa.id,
-      nome: "Mariana Costa",
-      ativo: true,
-      onboardingConcluido: true,
-    },
+    update: { empresaId: empresa.id, nome: "Mariana Costa", ativo: true, onboardingConcluido: true, senhaHash },
     create: {
       empresaId: empresa.id,
       nome: "Mariana Costa",
       email: "rh.demo@workwell.local",
+      senhaHash,
       perfil: PerfilUsuario.GESTOR_RH,
       cargo: "Gestora de RH",
       areaResponsavel: "Pessoas e Cultura",
@@ -132,18 +95,17 @@ async function main() {
     },
   });
 
+  // Check-ins dos últimos 7 dias ------------------------------------------
   const hoje = dataLocal();
-  for (const [indiceUsuario, colaborador] of colaboradores.entries()) {
+  for (const [indice, colaborador] of colaboradores.entries()) {
     for (let deslocamento = -6; deslocamento <= 0; deslocamento += 1) {
-      // Ana fica sem o registro de hoje para demonstrar a criação no vídeo.
-      if (indiceUsuario === 0 && deslocamento === 0) continue;
+      // Ana (índice 0) fica sem o check-in de hoje para a demonstração.
+      if (indice === 0 && deslocamento === 0) continue;
 
-      const variacao = (indiceUsuario + Math.abs(deslocamento)) % 3;
+      const variacao = (indice + Math.abs(deslocamento)) % 3;
       const data = adicionarDias(hoje, deslocamento);
       await prisma.checkin.upsert({
-        where: {
-          usuarioId_data: { usuarioId: colaborador.id, data },
-        },
+        where: { usuarioId_data: { usuarioId: colaborador.id, data } },
         update: {},
         create: {
           usuarioId: colaborador.id,
@@ -157,9 +119,38 @@ async function main() {
     }
   }
 
-  console.log(
-    `Carga fictícia concluída. Empresa ${empresa.id}; ${colaboradores.length} colaboradores com histórico.`,
-  );
+  // Lembretes de exemplo da Ana (UC09) -------------------------------------
+  const ana = colaboradores[0]!;
+  const lembretesAna = [
+    { tipo: "CHECKIN" as const, horario: "09:00", diasSemana: [1, 2, 3, 4, 5] },
+    { tipo: "PAUSA" as const, horario: "15:00", diasSemana: [1, 2, 3, 4, 5] },
+    { tipo: "DESCANSO" as const, horario: "22:00", diasSemana: [] },
+  ];
+  for (const lembrete of lembretesAna) {
+    const horario = new Date(`1970-01-01T${lembrete.horario}:00Z`);
+    const existe = await prisma.lembrete.findFirst({ where: { usuarioId: ana.id, metaId: null, tipo: lembrete.tipo, horario } });
+    if (!existe) await prisma.lembrete.create({ data: { usuarioId: ana.id, tipo: lembrete.tipo, horario, diasSemana: lembrete.diasSemana } });
+  }
+
+  // Desafio de exemplo -----------------------------------------------------
+  const tituloDesafio = "Semana da hidratação";
+  const desafioExistente = await prisma.desafio.findFirst({ where: { empresaId: empresa.id, titulo: tituloDesafio } });
+  if (!desafioExistente) {
+    await prisma.desafio.create({
+      data: {
+        empresaId: empresa.id,
+        criadoPorId: gestora.id,
+        titulo: tituloDesafio,
+        descricao: "Beba água ao longo do expediente e registre aqui uma vez por dia.",
+        dataInicio: adicionarDias(hoje, -2),
+        dataFim: adicionarDias(hoje, 12),
+        metaRegistros: 5,
+        pontosRecompensa: 50,
+      },
+    });
+  }
+
+  console.log(`Carga fictícia concluída: ${colaboradores.length} colaboradores e 1 gestora. Senha: ${SENHA_DEMO}`);
 }
 
 main()

@@ -1,22 +1,20 @@
+/**
+ * Controller do check-in diário.
+ */
 import type { Request, Response } from "express";
-import {
-  salvarCheckinSchema,
-  usuarioIdParamsSchema,
-} from "./checkin.schema.js";
-import { CheckinService } from "./checkin.service.js";
+import { usuarioLogado } from "../../middlewares/autenticacao.js";
+import { consultaResumoSchema, salvarCheckinSchema } from "./checkin.schema.js";
+import * as checkinService from "./checkin.service.js";
 
-const checkinService = new CheckinService();
+/** GET /api/checkins/resumo?dias=7|30 -> resumo do próprio colaborador. */
+export async function resumo(req: Request, res: Response) {
+  const { dias } = consultaResumoSchema.parse(req.query);
+  res.json(await checkinService.obterResumo(usuarioLogado(res).id, dias));
+}
 
-export class CheckinController {
-  resumo = async (req: Request, res: Response) => {
-    const { usuarioId } = usuarioIdParamsSchema.parse(req.params);
-    const resumo = await checkinService.obterResumo(usuarioId);
-    res.json(resumo);
-  };
-
-  salvar = async (req: Request, res: Response) => {
-    const dados = salvarCheckinSchema.parse(req.body);
-    const resultado = await checkinService.salvar(dados);
-    res.status(resultado.criado ? 201 : 200).json(resultado);
-  };
+/** POST /api/checkins -> cria (201) ou atualiza (200) o check-in de hoje. */
+export async function salvar(req: Request, res: Response) {
+  const dados = salvarCheckinSchema.parse(req.body);
+  const resultado = await checkinService.salvar(usuarioLogado(res).id, dados);
+  res.status(resultado.criado ? 201 : 200).json(resultado);
 }

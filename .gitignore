@@ -6,3 +6,4 @@ build/
 *.log
 generated/
 tmp/
+.claude/

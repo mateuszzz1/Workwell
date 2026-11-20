@@ -69,6 +69,47 @@ cd api
 npm.cmd run demo:reset
 ```
 
+## Hospedagem no Railway
+
+O projeto já está pronto para o Railway: a API também entrega o site, então tudo fica em **um único serviço + um banco PostgreSQL**, num endereço só.
+
+Arquivos envolvidos: `railway.json` (como compilar e iniciar), `package.json` na raiz (scripts `build` e `start`) e `api/src/app.ts` (serve a pasta `web/dist`).
+
+A cada inicialização, o servidor aplica as migrações (`prisma migrate deploy`), roda a carga de dados fictícios (o seed pode ser repetido sem duplicar nada) e sobe a API.
+
+### Passo a passo
+
+1. No [railway.com](https://railway.com), entre com a conta do GitHub dona do repositório.
+2. **New Project → Deploy from GitHub repo** → escolha `Workwell`. Em **Settings → Source**, confira a branch (`main` depois do merge do PR).
+3. No mesmo projeto: **+ Create → Database → PostgreSQL**.
+4. No serviço do WorkWell, aba **Variables**, crie:
+   | Variável | Valor |
+   |---|---|
+   | `DATABASE_URL` | `${{Postgres.DATABASE_URL}}` (referência ao banco criado no passo 3) |
+   | `NODE_ENV` | `production` |
+   | `TOKEN_SECRET` | um segredo longo. Gere com: `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
+5. Aba **Settings → Networking → Generate Domain**: o Railway cria o endereço público (ex.: `workwell-production.up.railway.app`).
+6. Aguarde o deploy. Nos logs deve aparecer `Carga fictícia concluída` e `API em ...`. Teste `https://SEU-ENDERECO/api/health`.
+
+Cada push na branch configurada gera um novo deploy automaticamente.
+
+### Restaurar a demonstração no banco do Railway
+
+No serviço **Postgres**, aba **Variables**, copie a `DATABASE_PUBLIC_URL` e rode no seu computador:
+
+```powershell
+cd api
+$env:DATABASE_URL = "COLE_A_DATABASE_PUBLIC_URL_AQUI"
+npm.cmd run demo:reset
+Remove-Item Env:DATABASE_URL
+```
+
+### Cuidados
+
+- O site fica público: use **apenas dados fictícios**. As senhas de demonstração estão neste README.
+- O período de teste do Railway dura 30 dias ou US$ 5 de crédito (o que acabar primeiro). Acompanhe o consumo em **Usage**.
+- Para desligar: no projeto, **Settings → Danger → Delete Project** (apaga o serviço e o banco).
+
 ## Casos de uso implementados
 
 | UC | Descrição | Onde |

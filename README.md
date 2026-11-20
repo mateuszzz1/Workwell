@@ -52,7 +52,7 @@ Abra `http://localhost:5173`. A API fica em `http://localhost:3333/api`.
 
 ### Contas de demonstração
 
-Todas usam a senha `workwell123` (dados fictícios, só para desenvolvimento).
+Todas usam a senha `12345678` (dados fictícios, só para desenvolvimento).
 
 | Perfil | E-mail | Observação |
 |---|---|---|

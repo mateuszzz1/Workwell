@@ -18,6 +18,51 @@ Documentação técnica:
 - **PostgreSQL + Prisma**: banco relacional, migrações e acesso tipado.
 - **Zod**: validação dos dados que chegam à API.
 
+## Arquitetura
+
+Em produção, tudo roda em **um único serviço Node.js** no Railway: ele entrega o site React já compilado e responde à API no mesmo endereço. O único serviço de apoio (*backing service*) é o **PostgreSQL**, acessado pelo Prisma. Os clientes são navegadores, no computador ou no celular, usados por dois perfis.
+
+```mermaid
+flowchart LR
+    subgraph Clientes["Clientes (navegador no computador ou celular)"]
+        COL["Colaborador<br/>check-in, hábitos, lembretes, desafios"]
+        RH["Gestor de RH<br/>painel agregado, desafios"]
+    end
+
+    subgraph Railway["Railway (produção)"]
+        subgraph App["Serviço WorkWell · Node.js + Express"]
+            SITE["Site React compilado<br/>web/dist · qualquer rota fora de /api"]
+            API["API REST<br/>/api/*"]
+            SEG["Middlewares<br/>autenticar · exigirPerfil · exigirOnboarding<br/>limite de tentativas · validação Zod"]
+            MOD["Módulos<br/>auth · usuarios · checkins · habitos · lembretes<br/>desafios · gamificacao · dashboard · health"]
+        end
+        DB[("PostgreSQL<br/>13 tabelas · migrações Prisma")]
+    end
+
+    GH["GitHub<br/>branch main"]
+    GF["Google Fonts<br/>fontes DM Sans e Fraunces"]
+
+    COL -->|"HTTPS: páginas e arquivos"| SITE
+    RH -->|"HTTPS: páginas e arquivos"| SITE
+    COL -->|"HTTPS + JSON<br/>Authorization: Bearer token"| API
+    RH -->|"HTTPS + JSON<br/>Authorization: Bearer token"| API
+    API --> SEG --> MOD
+    MOD -->|"Prisma Client (SQL)"| DB
+    COL -.->|"CSS das fontes"| GF
+    RH -.->|"CSS das fontes"| GF
+    GH -.->|"push na main dispara o deploy:<br/>build → migrate deploy → seed → start"| App
+```
+
+Como uma requisição percorre o sistema:
+
+1. O navegador baixa o site (HTML, JS e CSS) do próprio serviço. Só as fontes vêm de fora, do Google Fonts.
+2. No login, a API devolve um **token assinado** (vale 8 horas), que o site guarda no `localStorage` e envia no cabeçalho `Authorization` de cada chamada.
+3. Os middlewares identificam o usuário pelo token, conferem o perfil (colaborador ou RH) e o onboarding, e o Zod valida os dados de entrada.
+4. O módulo da rota aplica a regra de negócio e lê ou grava no PostgreSQL pelo Prisma. O painel do RH só devolve números de grupos com 5 ou mais pessoas.
+5. Os lembretes não usam push: com o site aberto, a página consulta `/api/lembretes/pendentes` a cada 30 segundos.
+
+Em **desenvolvimento** são dois processos: o Vite serve o site em `http://localhost:5173` e repassa as chamadas `/api` para a API em `http://localhost:3333`, que usa o PostgreSQL local. Detalhes do código em [docs/ARQUITETURA.md](docs/ARQUITETURA.md).
+
 ## Pré-requisitos
 
 - Node.js 24 LTS e npm.

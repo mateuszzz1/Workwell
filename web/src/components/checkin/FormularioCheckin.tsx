@@ -43,7 +43,7 @@ export function FormularioCheckin({ checkinAtual, salvando, onSalvar, onCancelar
     <form onSubmit={enviar}>
       <div className="escalas-grid">
         {/* Humor e energia são obrigatórios: a escala só devolve null quando é opcional. */}
-        <Escala titulo="Humor" descricao="Como está seu estado emocional?" valor={dados.humor} inicio="Muito baixo" fim="Muito bom" onChange={(v) => v !== null && alterar("humor", v)} />
+        <Escala titulo="Humor" descricao="Como está seu estado emocional?" valor={dados.humor} inicio="Muito baixo" fim="Muito bom" carinhas onChange={(v) => v !== null && alterar("humor", v)} />
         <Escala titulo="Energia" descricao="Como está sua disposição?" valor={dados.energia} inicio="Sem energia" fim="Cheio de energia" onChange={(v) => v !== null && alterar("energia", v)} />
         <Escala titulo="Sono" descricao="Como você avalia seu sono?" valor={dados.sono} inicio="Ruim" fim="Excelente" opcional onChange={(v) => alterar("sono", v)} />
         <Escala titulo="Estresse" descricao="Qual foi seu nível de tensão?" valor={dados.estresse} inicio="Muito baixo" fim="Muito alto" opcional onChange={(v) => alterar("estresse", v)} />

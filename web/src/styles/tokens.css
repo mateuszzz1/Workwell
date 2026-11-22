@@ -25,10 +25,24 @@
   --cor-foco: color-mix(in srgb, var(--cor-menta) 22%, transparent);
   --fonte-corpo: "DM Sans", ui-sans-serif, system-ui, sans-serif;
   --fonte-titulo: "Fraunces", Georgia, serif;
-  --raio-pequeno: 12px;
-  --raio-icone: 14px;
-  --raio-card: 20px;
-  --espaco-pagina: 24px;
+  /* Escala única (guia do Figma): espaços de 4 em 4 px e quatro tamanhos de canto. */
+  --espaco-4: 4px;
+  --espaco-8: 8px;
+  --espaco-12: 12px;
+  --espaco-16: 16px;
+  --espaco-20: 20px;
+  --espaco-24: 24px;
+  --espaco-32: 32px;
+  --raio-xs: 6px; /* barras e etiquetas pequenas */
+  --raio-sm: 12px; /* ícones, botões pequenos */
+  --raio-md: 16px; /* cards, campos e botões */
+  --raio-lg: 24px; /* cabeçalhos e painéis grandes */
+  --raio-pill: 999px; /* chips e barras de progresso */
+  --raio-pequeno: var(--raio-sm);
+  --raio-icone: var(--raio-sm);
+  --raio-card: var(--raio-md);
+  --espaco-pagina: var(--espaco-24);
+  --altura-campo: 52px;
   --sombra-card: 0 2px 4px color-mix(in srgb, var(--cor-floresta) 8%, transparent);
   --sombra-painel: 0 14px 38px color-mix(in srgb, var(--cor-floresta) 8%, transparent);
   --sombra-metrica: 0 5px 18px color-mix(in srgb, var(--cor-floresta) 4%, transparent);

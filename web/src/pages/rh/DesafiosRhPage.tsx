@@ -59,7 +59,7 @@ export function DesafiosRhPage() {
 
   return (
     <div className="pagina fade-in">
-      <section className="cabecalho-pagina">
+      <section className="cabecalho-pagina cabecalho-verde">
         <div>
           <span className="eyebrow">Engajamento</span>
           <h1>Desafios da empresa</h1>

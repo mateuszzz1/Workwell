@@ -39,7 +39,7 @@ export function DesafiosPage() {
 
   return (
     <div className="pagina fade-in">
-      <section className="cabecalho-pagina">
+      <section className="cabecalho-pagina cabecalho-verde">
         <div>
           <span className="eyebrow">Desafios da empresa</span>
           <h1>Pequenos desafios, grandes hábitos</h1>

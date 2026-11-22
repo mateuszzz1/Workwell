@@ -1,6 +1,6 @@
 /**
- * Tela de acesso: login (UC02) e criação de conta (UC01) no mesmo lugar,
- * alternando entre as duas abas.
+ * Tela de acesso: login (UC02) e criação de conta (UC01) no mesmo lugar.
+ * O botão abaixo do formulário alterna entre os dois modos.
  */
 import { useState, type FormEvent } from "react";
 import { useSessao } from "../../hooks/useSessao";
@@ -42,35 +42,27 @@ export function AcessoPage() {
     setErro(null);
   }
 
+  const login = modo === "login";
+
   return (
     <div className="acesso-pagina">
+      <header className="acesso-topo">
+        <img className="acesso-logo" src="/logo-workwell.webp" alt="WorkWell" />
+        <h1>{login ? "Bem-estar que faz sentido" : "Criar conta"}</h1>
+        <p>{login ? "Cuide de você e da sua equipe" : "Leva menos de um minuto"}</p>
+      </header>
+
       <section className="acesso-cartao fade-in">
-        <div className="marca acesso-marca">
-          <img className="marca-simbolo" src="/logo-workwell.webp" alt="" />
-          <span>WorkWell</span>
-        </div>
-        <h1>{modo === "login" ? "Bem-vindo de volta" : "Crie sua conta"}</h1>
-        <p className="acesso-subtitulo">Bem-estar no trabalho, um pequeno passo por dia.</p>
-
-        <div className="abas" role="tablist">
-          <button type="button" role="tab" aria-selected={modo === "login"} onClick={() => trocarModo("login")}>
-            Entrar
-          </button>
-          <button type="button" role="tab" aria-selected={modo === "cadastro"} onClick={() => trocarModo("cadastro")}>
-            Criar conta
-          </button>
-        </div>
-
         <form className="formulario" onSubmit={enviar}>
-          {modo === "cadastro" && (
+          {!login && (
             <label className="campo">
               <span>Nome completo</span>
-              <input value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" required minLength={2} />
+              <input value={nome} onChange={(e) => setNome(e.target.value)} autoComplete="name" placeholder="Ana Souza" required minLength={2} />
             </label>
           )}
           <label className="campo">
-            <span>E-mail</span>
-            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" required />
+            <span>E-mail corporativo</span>
+            <input type="email" value={email} onChange={(e) => setEmail(e.target.value)} autoComplete="email" placeholder="Email" required />
           </label>
           <label className="campo">
             <span>Senha</span>
@@ -78,11 +70,11 @@ export function AcessoPage() {
               type="password"
               value={senha}
               onChange={(e) => setSenha(e.target.value)}
-              autoComplete={modo === "login" ? "current-password" : "new-password"}
-              minLength={modo === "cadastro" ? 8 : undefined}
+              autoComplete={login ? "current-password" : "new-password"}
+              placeholder={login ? "Senha" : "Mínimo 8 caracteres"}
+              minLength={login ? undefined : 8}
               required
             />
-            {modo === "cadastro" && <small>Mínimo de 8 caracteres.</small>}
           </label>
 
           {erro && (
@@ -91,14 +83,18 @@ export function AcessoPage() {
             </div>
           )}
 
-          <button className="botao-primario" type="submit" disabled={enviando}>
-            {enviando ? "Aguarde..." : modo === "login" ? "Entrar" : "Criar conta"}
+          <button className="botao-primario acesso-botao" type="submit" disabled={enviando}>
+            {enviando ? "Aguarde..." : login ? "Entrar" : "Criar minha conta →"}
           </button>
         </form>
 
-        <p className="acesso-rodape">
-          Ambiente acadêmico com dados fictícios. Contas de demonstração estão no README do projeto.
-        </p>
+        <div className="acesso-divisor">ou</div>
+
+        <button type="button" className="acesso-alternar" onClick={() => trocarModo(login ? "cadastro" : "login")}>
+          {login ? "Sou novo(a) — criar conta" : "Já tenho conta — entrar"}
+        </button>
+
+        <p className="acesso-rodape">Ambiente acadêmico com dados fictícios.</p>
       </section>
     </div>
   );

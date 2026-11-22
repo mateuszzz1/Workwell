@@ -88,7 +88,10 @@ export function AppLayout({ pagina, onNavegar, children }: AppLayoutProps) {
 
       <section className="conteudo-shell">
         <header className="topbar">
-          <span className="ambiente">{colaborador ? "Espaço do colaborador" : "Gestão de RH"}</span>
+          <div className="topbar-saudacao">
+            <span className="ambiente">{colaborador ? "Espaço do colaborador" : "Gestão de RH"}</span>
+            <strong>Olá, {usuario.nome.split(" ")[0]}!</strong>
+          </div>
 
           <div className="usuario-topo">
             <div className="usuario-topo-texto">

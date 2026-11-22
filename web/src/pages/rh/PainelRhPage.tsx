@@ -51,7 +51,7 @@ export function PainelRhPage() {
 
   return (
     <div className="pagina fade-in">
-      <section className="cabecalho-pagina">
+      <section className="cabecalho-pagina cabecalho-verde">
         <div>
           <span className="eyebrow">Painel de bem-estar organizacional</span>
           <h1>Visão geral da {dashboard.empresa.nome}</h1>

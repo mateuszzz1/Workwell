@@ -1,5 +1,5 @@
 /**
- * Validações dos hábitos (criar/editar, registrar progresso e importar dados antigos).
+ * Validações dos hábitos (criar/editar e registrar progresso).
  */
 import { z } from "zod";
 import { dataSchema } from "../../utils/validacao.js";
@@ -64,30 +64,5 @@ export const registroSchema = z
   })
   .strict();
 
-/** Hábito no formato antigo, salvo apenas no navegador (localStorage). */
-const habitoLegado = z
-  .object({
-    id: z.string().min(1).max(80),
-    nome: z.string().trim().min(1).max(60),
-    icone: iconeSchema,
-    valor: z.number().int().min(0).max(1000),
-    meta: z.number().int().min(1).max(1000),
-    unidade: z.string().max(20),
-    concluido: z.boolean(),
-  })
-  .strict()
-  .refine((habito) => habito.valor <= habito.meta, "Progresso inválido.");
-
-/** Importação única dos hábitos antigos do navegador para o banco. */
-export const importacaoSchema = z
-  .object({
-    registros: z
-      .array(z.object({ data: dataSchema, habitos: z.array(habitoLegado).min(1).max(30) }).strict())
-      .min(1)
-      .max(10),
-  })
-  .strict();
-
 export type HabitoInput = z.infer<typeof habitoSchema>;
 export type RegistroInput = z.infer<typeof registroSchema>;
-export type ImportacaoInput = z.infer<typeof importacaoSchema>;

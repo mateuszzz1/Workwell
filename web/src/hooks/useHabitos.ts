@@ -4,7 +4,7 @@
  * Após cada ação, recarrega a lista para a tela refletir o banco.
  */
 import { useEffect, useState } from "react";
-import { excluirHabito, iniciarHabitos, listarHabitos, registrarHabito, salvarConfiguracaoHabito } from "../services/habitos-api";
+import { excluirHabito, listarHabitos, registrarHabito, salvarConfiguracaoHabito } from "../services/habitos-api";
 import type { ConfiguracaoHabito, PaginaHabitos, RegistroHabitoInput } from "../types/habitos";
 import { useSessao } from "./useSessao";
 
@@ -21,7 +21,6 @@ export function useHabitos(usuarioId: number, data: string) {
     let ativo = true;
     async function carregar() {
       try {
-        await iniciarHabitos(usuarioId);
         const pagina = await listarHabitos(data);
         if (ativo) setEstado({ data, revisao, pagina, erro: "" });
       } catch (falha) {

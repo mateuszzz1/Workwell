@@ -4,7 +4,7 @@
 import type { Request, Response } from "express";
 import { usuarioLogado } from "../../middlewares/autenticacao.js";
 import { idParamSchema } from "../../utils/validacao.js";
-import { consultaSchema, habitoSchema, importacaoSchema, registroSchema } from "./habito.schema.js";
+import { consultaSchema, habitoSchema, registroSchema } from "./habito.schema.js";
 import * as habitoService from "./habito.service.js";
 
 /** GET /api/habitos?data=AAAA-MM-DD */
@@ -44,10 +44,4 @@ export async function registrar(req: Request, res: Response) {
 export async function excluir(req: Request, res: Response) {
   const { id } = idParamSchema.parse(req.params);
   res.json(await habitoService.excluir(usuarioLogado(res).id, id));
-}
-
-/** POST /api/habitos/importacao */
-export async function importar(req: Request, res: Response) {
-  const dados = importacaoSchema.parse(req.body);
-  res.json(await habitoService.importar(usuarioLogado(res).id, dados));
 }

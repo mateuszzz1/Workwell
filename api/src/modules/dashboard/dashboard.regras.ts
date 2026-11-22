@@ -4,7 +4,6 @@
  * Regra principal: o RH só vê números de grupos com pelo menos
  * LIMIAR_MINIMO colaboradores. Num grupo de 2 pessoas, uma média
  * praticamente revela o check-in de cada uma; com 5 ou mais, não.
- * (Regra de engenharia adotada pelo grupo; validar com o professor.)
  */
 
 export const LIMIAR_MINIMO = 5;

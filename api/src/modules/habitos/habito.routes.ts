@@ -10,7 +10,6 @@ export const habitoRoutes = Router();
 habitoRoutes.use(autenticar, exigirPerfil("COLABORADOR"), exigirOnboarding);
 habitoRoutes.get("/", controller.listar);
 habitoRoutes.post("/", controller.criar);
-habitoRoutes.post("/importacao", controller.importar);
 habitoRoutes.get("/:id", controller.detalhe);
 habitoRoutes.put("/:id", controller.editar);
 habitoRoutes.delete("/:id", controller.excluir);

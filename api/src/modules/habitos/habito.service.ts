@@ -13,7 +13,7 @@ import { adicionarDias, chaveData, dataDeTexto, dataLocal } from "../../utils/da
 import { PONTOS } from "../gamificacao/gamificacao.regras.js";
 import { adicionarPontos } from "../gamificacao/gamificacao.service.js";
 import { agendado, diasDoPeriodo, resumirPeriodo, situacao } from "./habito.regras.js";
-import type { HabitoInput, ImportacaoInput, RegistroInput } from "./habito.schema.js";
+import type { HabitoInput, RegistroInput } from "./habito.schema.js";
 
 /** Limite de hábitos ativos por colaborador. */
 const MAXIMO_HABITOS = 30;
@@ -337,65 +337,4 @@ export async function registrar(usuarioId: number, id: number, dados: RegistroIn
   );
 
   return detalhe(usuarioId, id, dados.data);
-}
-
-/**
- * Importa hábitos que a versão antiga guardava só no navegador.
- * É idempotente: importar duas vezes não duplica nada (usa `origemLocalId`).
- */
-export async function importar(usuarioId: number, dados: ImportacaoInput) {
-  const hoje = chaveData(dataLocal());
-  if (dados.registros.some((registro) => registro.data > hoje)) {
-    throw new AppError("A importação não aceita registros futuros.");
-  }
-
-  const idsLocais = new Set(dados.registros.flatMap((registro) => registro.habitos.map((habito) => habito.id)));
-  if (idsLocais.size > MAXIMO_HABITOS) throw new AppError(`A importação permite até ${MAXIMO_HABITOS} hábitos.`);
-
-  const unidadeDoIcone = (icone: string) =>
-    icone === "water" ? "copos" : icone === "coffee" ? "pausas" : icone === "sleep" ? "registro" : "min";
-
-  await prisma.$transaction(async (tx) => {
-    const existentes = await tx.meta.findMany({ where: { usuarioId }, select: { origemLocalId: true } });
-    const novos = [...idsLocais].filter((idLocal) => !existentes.some((meta) => meta.origemLocalId === idLocal));
-    if (existentes.length + novos.length > MAXIMO_HABITOS) {
-      throw new AppError(`A importação ultrapassaria o limite de ${MAXIMO_HABITOS} hábitos.`);
-    }
-
-    const ordenados = [...dados.registros].sort((a, b) => a.data.localeCompare(b.data));
-    for (const registro of ordenados) {
-      const data = dataDeTexto(registro.data);
-
-      for (const legado of registro.habitos) {
-        const categoria = await categoriaDoIcone(tx, legado.icone);
-        const meta = await tx.meta.upsert({
-          where: { usuarioId_origemLocalId: { usuarioId, origemLocalId: legado.id } },
-          update: {},
-          create: {
-            usuarioId,
-            habitoId: categoria.id,
-            origemLocalId: legado.id,
-            nome: legado.nome,
-            icone: legado.icone,
-            unidade: unidadeDoIcone(legado.icone),
-            frequenciaAlvo: legado.meta,
-            periodo: "DIARIA",
-            dataInicio: data,
-          },
-        });
-        await tx.registroHabito.upsert({
-          where: { metaId_data: { metaId: meta.id, data } },
-          update: {},
-          create: {
-            metaId: meta.id,
-            data,
-            valor: legado.valor,
-            metaAlvo: legado.meta,
-            concluido: legado.valor >= legado.meta,
-          },
-        });
-      }
-    }
-  });
-  return { mensagem: "Registros anteriores preservados no banco." };
 }

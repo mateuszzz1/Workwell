@@ -385,13 +385,28 @@ describe("UC05/UC06/UC09 hábitos + banco", () => {
     assert.equal((await chamar(`/habitos/${r.corpo.id}/registro`, { metodo: "PUT", token, corpo: { data: textoHoje(), valor: 1, pausado: false } })).status, 400);
   });
 
-  test("importação de dados antigos é idempotente", async () => {
-    const { token, id } = await novoColaborador("Importa");
-    const corpo = { registros: [{ data: textoHoje(), habitos: [{ id: "local-1", nome: "Água", icone: "water", valor: 2, meta: 8, unidade: "copos", concluido: false }] }] };
-    assert.equal((await chamar("/habitos/importacao", { metodo: "POST", token, corpo })).status, 200);
-    assert.equal((await chamar("/habitos/importacao", { metodo: "POST", token, corpo })).status, 200);
-    assert.equal(await prisma.meta.count({ where: { usuarioId: id } }), 1);
-    assert.equal(await prisma.registroHabito.count({ where: { meta: { usuarioId: id } } }), 1);
+  test("hábito de sono: avaliação do sono e pausa do dia", async () => {
+    const { token, id } = await novoColaborador("Sono");
+    const sono = { ...habito, nome: "Sono teste", icone: "sleep", meta: 1, unidade: "registro", permitirPausa: true, lembretesAtivos: false, horarios: [] };
+    const criado = await chamar("/habitos", { metodo: "POST", token, corpo: sono });
+    assert.equal(criado.status, 201);
+    const metaId = criado.corpo.id as number;
+
+    // Concluir com nota do sono: grava a nota e dá 2 pontos
+    const feito = await chamar(`/habitos/${metaId}/registro`, { metodo: "PUT", token, corpo: { data: textoHoje(), valor: 1, pausado: false, avaliacaoSono: 4 } });
+    assert.equal(feito.status, 200);
+    assert.equal(feito.corpo.estado, "CONCLUIDO");
+    let reg = await prisma.registroHabito.findUniqueOrThrow({ where: { metaId_data: { metaId, data: hoje() } } });
+    assert.deepEqual([reg.concluido, reg.avaliacaoSono], [true, 4]);
+    assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id } })).pontosTotal, 2);
+
+    // Pausar o dia: deixa de contar como concluído, devolve os pontos e mantém a nota
+    const pausado = await chamar(`/habitos/${metaId}/registro`, { metodo: "PUT", token, corpo: { data: textoHoje(), valor: 0, pausado: true } });
+    assert.equal(pausado.status, 200);
+    assert.equal(pausado.corpo.estado, "PAUSADO");
+    reg = await prisma.registroHabito.findUniqueOrThrow({ where: { metaId_data: { metaId, data: hoje() } } });
+    assert.deepEqual([reg.pausado, reg.concluido, reg.avaliacaoSono], [true, false, 4]);
+    assert.equal((await prisma.usuario.findUniqueOrThrow({ where: { id } })).pontosTotal, 0);
   });
 });
 

@@ -1,6 +1,6 @@
 /**
  * Regras "puras" do check-in: só cálculos, sem banco de dados.
- * Por não dependerem do banco, são fáceis de testar (tests/checkin.test.ts).
+ * Por não dependerem do banco, são fáceis de testar (tests/regras.test.ts).
  */
 import { adicionarDias, chaveData } from "../../utils/data.js";
 

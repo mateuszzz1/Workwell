@@ -1062,13 +1062,6 @@
 .colaborador-nav {
   display: none;
 }
-.progresso-pagina .grade-principal {
-  grid-template-columns: 1fr;
-}
-.progresso-pagina .historico-painel {
-  position: static;
-}
-
 @media (max-width: 820px) {
   .colaborador-shell .conteudo-principal {
     padding-bottom: 96px;

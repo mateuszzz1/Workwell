@@ -142,8 +142,7 @@ model Meta {
   quantidadeSemanal Int?
   permitirPausa     Boolean     @default(true)
   lembretesAtivos   Boolean     @default(false)
-  origemLocalId     String?
-  criadaEm          DateTime    @default(now())
+  criadaEm         DateTime    @default(now())
   atualizadaEm      DateTime    @updatedAt
 
   usuario   Usuario          @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
@@ -151,7 +150,6 @@ model Meta {
   registros RegistroHabito[]
   lembretes Lembrete[]
 
-  @@unique([usuarioId, origemLocalId])
   @@index([usuarioId, ativa])
   @@index([habitoId])
 }

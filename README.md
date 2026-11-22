@@ -9,6 +9,8 @@ Documentação técnica:
 
 - [docs/ARQUITETURA.md](docs/ARQUITETURA.md): como o código está organizado e por quê.
 - [docs/API.md](docs/API.md): todas as rotas da API, com quem pode usar cada uma.
+- [docs/MAPA_DO_CODIGO.md](docs/MAPA_DO_CODIGO.md): onde está cada funcionalidade e como foi feita.
+- [docs/PERGUNTAS_SOBRE_O_CODIGO.md](docs/PERGUNTAS_SOBRE_O_CODIGO.md): perguntas prováveis sobre as partes críticas, com o arquivo, o trecho e o motivo, em linguagem simples.
 
 ## Stack
 

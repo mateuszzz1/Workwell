@@ -36,31 +36,8 @@ const CATALOGO_HABITOS = [
   { nome: "Respiração consciente", descricao: "Reservar alguns minutos para reduzir o estresse.", categoria: CategoriaHabito.ESTRESSE },
 ];
 
-/**
- * As contas principais da demonstração mudaram de e-mail. Se o banco ainda
- * tiver o e-mail antigo, renomeamos a conta (mantendo o histórico) em vez de
- * criar uma conta duplicada.
- */
-const EMAILS_RENOMEADOS = [
-  { antigo: "ana.souza@workwell.local", novo: "user@ifsp.com" },
-  { antigo: "rh.demo@workwell.local", novo: "rh@ifsp.com" },
-];
-
-async function renomearContasAntigas() {
-  for (const { antigo, novo } of EMAILS_RENOMEADOS) {
-    const [contaAntiga, contaNova] = await Promise.all([
-      prisma.usuario.findUnique({ where: { email: antigo } }),
-      prisma.usuario.findUnique({ where: { email: novo } }),
-    ]);
-    if (contaAntiga && !contaNova) {
-      await prisma.usuario.update({ where: { id: contaAntiga.id }, data: { email: novo } });
-    }
-  }
-}
-
 async function main() {
   const senhaHash = await gerarHashSenha(SENHA_DEMO);
-  await renomearContasAntigas();
 
   // Empresa ---------------------------------------------------------------
   const empresa = await prisma.empresa.upsert({

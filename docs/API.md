@@ -57,7 +57,6 @@ O cadastro sempre cria um **colaborador** com `onboardingConcluido: false`.
 | PUT | `/habitos/:id` | edita hábito |
 | DELETE | `/habitos/:id` | exclusão lógica (o histórico é mantido) |
 | PUT | `/habitos/:id/registro` | `{ data, valor, pausado, avaliacaoSono?, lembretesAtivos? }`. Concluir hoje vale +2 pontos |
-| POST | `/habitos/importacao` | importa dados antigos do navegador (uso interno) |
 
 ## Lembretes de pausa, descanso e check-in (UC09) 🔒 colaborador com onboarding
 

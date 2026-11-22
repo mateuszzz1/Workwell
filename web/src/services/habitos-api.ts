@@ -2,54 +2,11 @@
  * Chamadas da API de hábitos e utilitários de data usados pelas telas de hábitos.
  */
 import { api } from "./api";
-import { carregarHabitos } from "./habitos-legado";
 import type { ConfiguracaoHabito, DetalheHabito, PaginaHabitos, RegistroHabitoInput } from "../types/habitos";
-
-const inicializacoes = new Map<number, Promise<void>>();
 
 /** Chama uma rota de hábitos. O token de login é enviado automaticamente por api(). */
 function requisicao<T>(caminho: string, opcoes: RequestInit = {}): Promise<T> {
   return api<T>(`/habitos${caminho}`, opcoes);
-}
-
-/**
- * Versões antigas guardavam os hábitos só no navegador (localStorage).
- * Na primeira abertura, enviamos esses dados ao banco uma única vez.
- */
-async function importarCache(usuarioId: number) {
-  const marcador = `workwell-habitos-migrados-v1-${usuarioId}`;
-  let existe: boolean;
-  try {
-    existe = !localStorage.getItem(marcador) && !!localStorage.getItem(`workwell-habitos-v1-${usuarioId}`);
-  } catch {
-    return;
-  }
-  if (!existe) return;
-  const { registros } = carregarHabitos(usuarioId, dataSaoPaulo(), false);
-  const validos = registros.filter((registro) => registro.data <= dataSaoPaulo());
-  for (let indice = 0; indice < validos.length; indice += 10)
-    await requisicao("/importacao", {
-      method: "POST",
-      body: JSON.stringify({ registros: validos.slice(indice, indice + 10) })
-    });
-  try {
-    localStorage.setItem(marcador, "1");
-  } catch {
-    /* A importação é idempotente, mesmo sem marcador local. */
-  }
-}
-
-/** Executa a importação do cache antigo uma única vez por usuário. */
-export async function iniciarHabitos(usuarioId: number) {
-  if (!inicializacoes.has(usuarioId))
-    inicializacoes.set(
-      usuarioId,
-      importarCache(usuarioId).catch((erro) => {
-        inicializacoes.delete(usuarioId);
-        throw erro;
-      })
-    );
-  await inicializacoes.get(usuarioId);
 }
 
 /** Data de hoje (AAAA-MM-DD) no fuso de São Paulo, igual à API. */

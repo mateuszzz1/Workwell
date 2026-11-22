@@ -316,7 +316,7 @@ export const salvarCheckinSchema = z.object({
 
 **Resumo:** O modelo das tabelas está no arquivo do Prisma. Cada mudança vira uma migração, um passo registrado com o SQL gerado. Assim qualquer computador monta o mesmo banco com um comando.
 
-**Arquivo:** [schema.prisma](../api/prisma/schema.prisma) e a pasta [migrations](../api/prisma/migrations) (8 migrações).
+**Arquivo:** [schema.prisma](../api/prisma/schema.prisma) e a pasta [migrations](../api/prisma/migrations) (9 migrações).
 
 **Detalhes:** o diagrama do relatório tem 11 entidades; no banco são 13 tabelas, porque participação em desafio e conquista de medalha ganharam tabelas próprias. O alerta de engajamento não aponta o colaborador, por privacidade. Usamos PostgreSQL em vez do MySQL do relatório; o modelo é o mesmo.
 

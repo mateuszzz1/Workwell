@@ -1,7 +1,8 @@
 /**
- * Barra de navegação inferior do colaborador (aparece no celular).
+ * Barra de navegação inferior (aparece no celular), com as páginas do colaborador
+ * ou, para o RH, o painel e os desafios.
  */
-import { Bell, CalendarDays, Clock, House, UsersRound, type LucideIcon } from "lucide-react";
+import { Bell, CalendarDays, ChartColumn, Clock, House, UsersRound, type LucideIcon } from "lucide-react";
 import type { Pagina } from "./AppLayout";
 
 const ITENS: Array<{ pagina: Pagina; rotulo: string; Icone: LucideIcon }> = [
@@ -12,12 +13,17 @@ const ITENS: Array<{ pagina: Pagina; rotulo: string; Icone: LucideIcon }> = [
   { pagina: "desafios", rotulo: "Desafios", Icone: UsersRound },
 ];
 
-type ColaboradorNavProps = { pagina: Pagina; onNavegar: (pagina: Pagina) => void };
+const ITENS_RH: typeof ITENS = [
+  { pagina: "painel", rotulo: "Painel", Icone: ChartColumn },
+  { pagina: "desafios", rotulo: "Desafios", Icone: UsersRound },
+];
 
-export function ColaboradorNav({ pagina, onNavegar }: ColaboradorNavProps) {
+type ColaboradorNavProps = { pagina: Pagina; onNavegar: (pagina: Pagina) => void; rh?: boolean };
+
+export function ColaboradorNav({ pagina, onNavegar, rh = false }: ColaboradorNavProps) {
   return (
-    <nav className="colaborador-nav" aria-label="Navegação do colaborador">
-      {ITENS.map(({ pagina: destino, rotulo, Icone }) => (
+    <nav className="colaborador-nav" aria-label={rh ? "Navegação do RH" : "Navegação do colaborador"}>
+      {(rh ? ITENS_RH : ITENS).map(({ pagina: destino, rotulo, Icone }) => (
         <button
           key={destino}
           type="button"

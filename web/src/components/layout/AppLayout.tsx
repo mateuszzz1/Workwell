@@ -116,7 +116,7 @@ export function AppLayout({ pagina, onNavegar, children }: AppLayoutProps) {
         <main className="conteudo-principal">{children}</main>
 
         {colaborador && <AvisoLembretes />}
-        {colaborador && <ColaboradorNav pagina={pagina} onNavegar={onNavegar} />}
+        <ColaboradorNav pagina={pagina} onNavegar={onNavegar} rh={!colaborador} />
       </section>
     </div>
   );

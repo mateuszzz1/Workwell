@@ -953,3 +953,13 @@
   gap: var(--espaco-20);
   align-content: start;
 }
+
+@media (max-width: 820px) {
+  /* RH no celular: navega pela barra inferior, como o colaborador; o menu do topo sai. */
+  .app-shell:not(.colaborador-shell) .sidebar {
+    display: none;
+  }
+  .app-shell:not(.colaborador-shell) .conteudo-principal {
+    padding-bottom: 96px;
+  }
+}

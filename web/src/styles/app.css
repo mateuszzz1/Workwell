@@ -941,3 +941,15 @@
 .cabecalho-verde .selo-anonimo small {
   color: var(--cor-branco-suave);
 }
+
+/* Espaço padrão entre os blocos de cada página e dentro das colunas:
+   nenhum card fica colado no outro. */
+.pagina > * + * {
+  margin-top: var(--espaco-20);
+}
+.grade-principal > div,
+.grade-rh > div {
+  display: grid;
+  gap: var(--espaco-20);
+  align-content: start;
+}

@@ -97,6 +97,8 @@ npm.cmd run dev
 
 Abra `http://localhost:5173`. A API fica em `http://localhost:3333/api`.
 
+> **Dica de ambiente (IDE):** se o editor apontar erros de tipagem em `api/prisma/seed.ts` ou nos imports do Prisma ao abrir o projeto pela primeira vez, execute `npm.cmd install` e `npm.cmd run prisma:generate` em `api/` (além de `npm.cmd install` em `web/`) e reinicie o serviço de TypeScript da IDE.
+
 ### Contas de demonstração
 
 Todas usam a senha `12345678` (dados fictícios, só para desenvolvimento).
